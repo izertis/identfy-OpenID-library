@@ -1,0 +1,39 @@
+{
+  "name": "openid-lib",
+  "version": "0.1.0",
+  "description": "",
+  "main": "./dist/src/index.js",
+  "exports": "./dist/src/index.js",
+  "scripts": {
+    "test": "mocha --recursive dist/test --reporter spec --timeout 5000",
+    "build_and_test": "npm run build && npm run test",
+    "build": "npx tsc",
+    "run": "npx tsc && node dist/index.js"
+  },
+  "author": "Izertis",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/chai": "^4.3.11",
+    "@types/jsonwebtoken": "^9.0.5",
+    "@types/mocha": "^10.0.6",
+    "@types/uuid": "^9.0.8",
+    "chai": "^5.1.0",
+    "mocha": "^10.3.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "type": "module",
+  "dependencies": {
+    "@cef-ebsi/key-did-resolver": "^2.0.0",
+    "date-and-time": "^3.1.1",
+    "did-resolver": "^4.1.0",
+    "jose": "^5.2.2",
+    "jsonwebtoken": "^9.0.2",
+    "pkce-challenge": "^4.1.0",
+    "querystring": "^0.2.1",
+    "uuid": "^9.0.1"
+  }
+}
