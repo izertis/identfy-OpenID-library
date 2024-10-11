@@ -7,7 +7,6 @@ import {
 // RFC 6749 Section 3.1.1
 // OAuth 2.0 Multiple Response Type Encoding Practices Section 3
 // OID4VP Section 5.4
-// TODO: Maybe we should not give support for the "token" response type
 /**
  * Valid response types for an authorisation response
  */

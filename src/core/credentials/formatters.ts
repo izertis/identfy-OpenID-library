@@ -27,7 +27,7 @@ export abstract class VcFormatter {
   /**
    * Generates a formatter instance based on the specified format
    * @param format The format to consider
-   * @param dataModel The W3C data model version 
+   * @param dataModel The W3C data model version
    * @returns A VcFormatter that allow to express unsigned VC in the specified format
    */
   static fromVcFormat(
@@ -37,7 +37,6 @@ export abstract class VcFormatter {
     if (format === "jwt_vc" || format === "jwt_vc_json") {
       return new JwtVcFormatter(dataModel);
     } else if (format === "jwt_vc_json-ld" || format === "ldp_vc") {
-      // TODO:
       throw new InternalError("Unimplemented");
     } else {
       throw new InternalError("Unsupported format");
@@ -74,18 +73,16 @@ class JwtVcFormatter extends VcFormatter {
     token: JwtPayload,
     vc: W3CVerifiableCredential
   ): W3CVerifiableCredential | JwtPayload {
-    if (vc.issued) {
-      token.iat = expressDateInSeconds(vc.issued);
-      token.nbf = expressDateInSeconds(vc.issued);
-    } else if (vc.issuanceDate) {
-      token.iat = expressDateInSeconds(vc.issuanceDate);
-      token.nbf = expressDateInSeconds(vc.issuanceDate);
-    } else if (vc.validFrom) {
-      token.iat = expressDateInSeconds(vc.validFrom);
-      token.nbf = expressDateInSeconds(vc.validFrom);
+    const nbf = vc.validFrom ?? (vc.issuanceDate ?? vc.issued);
+    const iat = vc.issuanceDate ?? (vc.issued ?? vc.validFrom);
+    if (nbf) {
+      token.nbf = expressDateInSeconds(nbf);
+    }
+    if (iat) {
+      token.iat = expressDateInSeconds(iat);
     }
     if (vc.expirationDate) {
-      token.exp = Date.parse(vc.validUntil);
+      token.exp = expressDateInSeconds(vc.expirationDate);
     }
     return token;
   }

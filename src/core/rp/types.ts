@@ -1,5 +1,7 @@
+import { JWK } from "jose";
 import { JWA_ALGS } from "../../common/constants/index.js";
 import { AuthzResponseMode } from "../../common/formats/index.js";
+import { DIFPresentationDefinition } from "../../common/index.js";
 import {
   AuthorizationDetails
 } from "../../common/interfaces/authz_details.interface.js";
@@ -30,7 +32,7 @@ export type TokenSignCallback = (
  * @param header JWT Header of the ID Token
  * @param payload JWT payload if the ID Token
  * @param didDocument DID Document of the entity the token relates to
- * @returns Indication of whether the verification was successful 
+ * @returns Indication of whether the verification was successful
  * accompanied by an optional error message
  */
 export type IdTokenVerifyCallback = (
@@ -46,28 +48,28 @@ export type IdTokenVerifyCallback = (
 export type GetClientDefaultMetada = () => Promise<HolderMetadata>;
 
 /**
- * Defines an object type which allows to specify the optional parameters of 
+ * Defines an object type which allows to specify the optional parameters of
  * VerifyBaseAuthzRequest OpenIDReliyingParyy method
  */
 export type VerifyBaseAuthzRequestOptionalParams = {
   /**
    * Function for verifying the authorisation details of an authorisation request
    * @param authDetails Details to verify
-   * @returns Indication of whether the verification was successful 
+   * @returns Indication of whether the verification was successful
    * accompanied by an optional error message
    */
   authzDetailsVerifyCallback?: (authDetails: AuthorizationDetails) => Promise<VerificationResult>;
   /**
    * Function for verifying the scope of an authorisation request
    * @param scope The scope of the authz request
-   * @returns Indication of whether the verification was successful 
+   * @returns Indication of whether the verification was successful
    * accompanied by an optional error message
    */
   scopeVerifyCallback?: (scope: string) => Promise<VerificationResult>;
   /**
    * Function for verifying the "issuer_state" parameter of an authorisation request
    * @param state The state of the issuer sent in a Credential Offer
-   * @returns Indication of whether the verification was successful 
+   * @returns Indication of whether the verification was successful
    * accompanied by an optional error message
    */
   issuerStateVerifyCallback?: (state: string) => Promise<VerificationResult>;
@@ -82,7 +84,7 @@ export interface GenerateAccessTokenOptionalParameters {
    * Allows to verify the authorisation code sent with the token request
    * @param clientId The identifier of the client
    * @param code The code itself
-   * @returns Indication of whether the verification was successful 
+   * @returns Indication of whether the verification was successful
    * accompanied by an optional error message
    */
   authorizeCodeCallback?: (
@@ -94,7 +96,7 @@ export interface GenerateAccessTokenOptionalParameters {
    * @param clientId The identifier of the client
    * @param preCode The code itself
    * @param pin The PIN sent by the client
-   * @returns Indication of whether the verification was successful 
+   * @returns Indication of whether the verification was successful
    * accompanied by an optional error message
    */
   preAuthorizeCodeCallback?: (
@@ -103,17 +105,25 @@ export interface GenerateAccessTokenOptionalParameters {
     pin?: string
   ) => Promise<{ client_id?: string, error?: string }>;
   /**
-   * Allows to verify the "code_challenge" parameter sent by an user in 
+   * Allows to verify the "code_challenge" parameter sent by an user in
    * a previous authorisation request
    * @param clientId The identifier of the client
    * @param codeVerifier The code_verifier of the previously received challenge
-   * @returns Indication of whether the verification was successful 
+   * @returns Indication of whether the verification was successful
    * accompanied by an optional error message
    */
   codeVerifierCallback?: (
     clientId: string,
     codeVerifier?: string
   ) => Promise<VerificationResult>,
+  /**
+   * Allows to obtain the JWK used by a service client in the Authz phase
+   * @param clientId The identifier of the client
+   * @returns The JWK previously used by that client during the authz phase
+   */
+  retrieveClientAssertionPublicKeys?: (
+    clientId: string
+  ) => Promise<JWK>,
   cNonceToEmploy?: string;
   cNonceExp?: number;
   accessTokenExp?: number;
@@ -126,11 +136,11 @@ export interface GenerateAccessTokenOptionalParameters {
 export type CreateIdTokenRequestOptionalParams = {
   /**
    * Response mode to specify in the ID Token
-   * @defaultValue "direct_post" 
+   * @defaultValue "direct_post"
    */
   responseMode?: AuthzResponseMode;
   /**
-   * Additiona payload to include in the JWT 
+   * Additional payload to include in the JWT
    */
   additionalPayload?: Record<string, any>;
   /**
@@ -154,7 +164,49 @@ export type CreateIdTokenRequestOptionalParams = {
 };
 
 /**
- * Client metadata that has been processed to indicate which formats, signature 
+ * Defines an object type that allows to specify the optional parameters of
+ * "createVpTokenRequest" OpenIDReliyingParty method
+ */
+export type CreateVpTokenRequestOptionalParams = {
+  /**
+ * Response mode to specify in the ID Token
+ * @defaultValue "direct_post"
+ */
+  responseMode?: AuthzResponseMode;
+  /**
+   * Additional payload to include in the JWT
+   */
+  additionalPayload?: Record<string, any>;
+  /**
+   * The state to indicate in the JWT
+   */
+  state?: string;
+  /**
+   * The nonce to indicate in the JWT.
+   * @defaultValue UUID randomly generated
+   */
+  nonce?: string;
+  /**
+   * The expiration time of the JWT. Must be in seconds
+   * @defaultValue 1 hour
+   */
+  expirationTime?: number;
+  /**
+   * The scope to include in the JWT
+   */
+  scope?: string;
+  /**
+   * The presentation definition to include in the JWT
+   */
+  presentation_definition?: DIFPresentationDefinition;
+  /**
+   * The URI in which the presentation definition can be retrieved
+   */
+  presentation_definition_uri?: string
+}
+
+/**
+ * Client metadata that has been processed to indicate which formats, signature
  * algorithms and response types are supported.
  */
 export interface ValidatedClientMetadata {

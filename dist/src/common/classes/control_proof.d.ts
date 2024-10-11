@@ -11,6 +11,10 @@ export declare abstract class ControlProof {
      */
     abstract getAssociatedIdentifier(): string;
     /**
+     * Allows to obtain the nonce included in the proof
+     */
+    abstract getInnerNonce(): string;
+    /**
      * Express the proof as a object that contains only the attributes
      */
     abstract toJSON(): Record<string, string>;
@@ -42,6 +46,7 @@ declare class JwtControlProof extends ControlProof {
     constructor(format: ControlProofType, jwt: string);
     toJSON(): Record<string, string>;
     getAssociatedIdentifier(): string;
+    getInnerNonce(): string;
     verifyProof(cNonce: string, audience: string, didResolver: Resolvable): Promise<void>;
 }
 export {};

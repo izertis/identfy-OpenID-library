@@ -8,6 +8,7 @@ import {
   IdTokenResponse,
   JWA_ALGS,
   TokenRequest,
+  alwaysAcceptVerification,
   decodeToken,
   generateChallenge,
   generateDefaultAuthorisationServerMetadata
@@ -76,7 +77,8 @@ describe("Reliying Party tests", async () => {
       ...generateDefaultAuthorisationServerMetadata("https://issuer"),
       grant_types_supported: ["authorization_code", "urn:ietf:params:oauth:grant-type:pre-authorized_code"]
     },
-    new Resolver(getResolver())
+    new Resolver(getResolver()),
+    alwaysAcceptVerification
   );
   context("authorization_code response type with ID Token", async () => {
     it("It should successfully emit an AccessToken", async () => {

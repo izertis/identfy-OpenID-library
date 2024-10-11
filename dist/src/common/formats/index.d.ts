@@ -17,3 +17,4 @@ export declare enum W3CDataModel {
     V1 = 0,
     V2 = 1
 }
+export type ClientAssertionTypes = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";

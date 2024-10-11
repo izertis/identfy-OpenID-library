@@ -18,10 +18,10 @@ export class IssuerMetadataBuilder {
   private credentials_supported: Map<string, CredentialSupported> = new Map();
   /**
    * Constructor of IssuerMetadataBuilder
-   * @param credential_issuer URI of the credential issuer 
-   * @param credential_endpoint Credential issuer endpoint in which credential 
+   * @param credential_issuer URI of the credential issuer
+   * @param credential_endpoint Credential issuer endpoint in which credential
    * request should be sended
-   * @param imposeHttps Flag that indicates if the builder should check if 
+   * @param imposeHttps Flag that indicates if the builder should check if
    * the provided URL are HTTPS
    * @throws if imposeHttps is true an a not HTTPS URI is provided
    */
@@ -32,11 +32,9 @@ export class IssuerMetadataBuilder {
   ) {
     if (imposeHttps) {
       if (!isHttps(credential_issuer)) {
-        // TODO: Define error enum
         throw new InternalError("Is not https");
       }
       if (!isHttps(credential_endpoint)) {
-        // TODO: Define error enum
         throw new InternalError("Is not https");
       }
     }
@@ -45,7 +43,6 @@ export class IssuerMetadataBuilder {
   private assertUrlIsHttps(url: string, assertedParameter: string) {
     if (this.imposeHttps) {
       if (!isHttps(url)) {
-        // TODO: Define error enum
         throw new InternalError(`${assertedParameter} is not https`);
       }
     }
@@ -96,7 +93,6 @@ export class IssuerMetadataBuilder {
       id = uuidv4();
     } else {
       if (this.credentials_supported.get(supportedCredential.id)) {
-        // TODO: Define error enum
         throw new InternalError("Credential supported already defined");
       }
       id = supportedCredential.id;
@@ -207,7 +203,7 @@ export class VerifiableCredentialDisplayBuilder {
 
   /**
    * Set the locale information of the display information
-   * @param locale String value that identifies the language of this object 
+   * @param locale String value that identifies the language of this object
    * represented as a language tag taken from values defined in BCP47
    * @returns This object
    */

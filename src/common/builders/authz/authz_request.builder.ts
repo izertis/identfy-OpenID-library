@@ -1,5 +1,5 @@
 import { InvalidDataProvided } from "../../classes/index.js";
-import { DEFAULT_SCOPE, JWA_ALGS } from "../../constants/index.js";
+import { DEFAULT_SCOPE } from "../../constants/index.js";
 import { AuthorizationDetails } from "../../interfaces/authz_details.interface.js";
 import { AuthzRequest } from "../../interfaces/authz_request.interface.js";
 import {
@@ -26,7 +26,7 @@ export class AuthzRequestBuilder {
    * @param response_type The "reponse_type" attribute of an authorization request
    * @param client_id  The client identifier
    * @param redirect_uri  The "redirect_uri" attribute of an authorization request
-   * @param imposeOpenIdScope Flag that manages whether "scope" should 
+   * @param imposeOpenIdScope Flag that manages whether "scope" should
    * be checked for the string "openid".
    */
   constructor(
@@ -37,14 +37,14 @@ export class AuthzRequestBuilder {
   ) { }
 
   /**
-   * Generates a build with the required data for a AuthzRequest sent 
+   * Generates a build with the required data for a AuthzRequest sent
    * by a Holder Wallet
    * @param response_type The "reponse_type" attribute of an authorization request
    * @param client_id The client identifier
    * @param redirect_uri The "redirect_uri" attribute of an authorization request
    * @param metadata The metadata of the Holder
    * @param code_challenge The "code_challenge" attribute of authorization request
-   * @param code_challenge_method The "code_challenge_method" attribute of 
+   * @param code_challenge_method The "code_challenge_method" attribute of
    * authorization request
    * @param issuer_state The "issuer_state" attribute of authorization request
    * @returns Instance of AuthzRequestBuilder
@@ -55,7 +55,7 @@ export class AuthzRequestBuilder {
     redirect_uri: string,
     metadata: HolderMetadata,
     code_challenge: string,
-    code_challenge_method: string, // TODO: Define new type
+    code_challenge_method: string,
     issuer_state?: string,
   ) {
     const builder = new AuthzRequestBuilder(
@@ -72,7 +72,7 @@ export class AuthzRequestBuilder {
   }
 
   /**
-   * Generates a build with the required data for a AuthzRequest sent 
+   * Generates a build with the required data for a AuthzRequest sent
    * by a Service Wallet
    * @param response_type The "reponse_type" attribute of an authorization request
    * @param client_id The client identifier
@@ -167,7 +167,7 @@ export class AuthzRequestBuilder {
 
   /**
    * Add authorization details to an autorization request
-   * @param authorizationDetails The details to include 
+   * @param authorizationDetails The details to include
    * @returns This object
    */
   addAuthzDetails(authorizationDetails: AuthorizationDetails): AuthzRequestBuilder {

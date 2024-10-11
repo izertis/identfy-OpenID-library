@@ -112,7 +112,6 @@ describe("VC Issuance tests", () => {
           }
         );
         expect(credentialResponse.credential).not.to.be.undefined;
-        console.log(credentialResponse.credential);
       } catch (_error: any) {
         assert.fail("Should not have thrown");
       }

@@ -11,3 +11,7 @@ export * from "./issuer_metadata.interface.js";
 export * from "./token_request.interface.js";
 export * from "./token_response.interface.js";
 export * from "./w3c_verifiable_credential.interface.js";
+export * from "./presentation_definition.interface.js";
+export * from "./presentation_submission.interface.js";
+export * from "./verifiable_presentation.interface.js";
+export * from "./vp_token_response.interface.js";

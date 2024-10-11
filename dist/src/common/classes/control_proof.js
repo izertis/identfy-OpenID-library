@@ -68,9 +68,17 @@ class JwtControlProof extends ControlProof {
         }
         return this.clientIdentifier;
     }
+    getInnerNonce() {
+        const { payload } = decodeToken(this.jwt);
+        const jwtPayload = payload;
+        if (!jwtPayload.nonce) {
+            throw new InvalidProof(`"nonce" parameter is not specified`);
+        }
+        return jwtPayload.nonce;
+    }
     verifyProof(cNonce, audience, didResolver) {
-        var _a;
         return __awaiter(this, void 0, void 0, function* () {
+            var _a;
             const { header, payload } = decodeToken(this.jwt);
             const jwtPayload = payload;
             if (!header.typ || header.typ !== "openid4vci-proof+jwt") {
@@ -105,7 +113,7 @@ class JwtControlProof extends ControlProof {
                 throw new InvalidProof(error.message);
             }
             const publicKey = yield importJWK(publicKeyJwk);
-            yield jwtVerify(this.jwt, publicKey);
+            yield jwtVerify(this.jwt, publicKey, { clockTolerance: 5 });
         });
     }
 }

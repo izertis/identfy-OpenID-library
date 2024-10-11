@@ -19,7 +19,6 @@ export class VcFormatter {
             return new JwtVcFormatter(dataModel);
         }
         else if (format === "jwt_vc_json-ld" || format === "ldp_vc") {
-            // TODO:
             throw new InternalError("Unimplemented");
         }
         else {
@@ -52,20 +51,17 @@ class JwtVcFormatter extends VcFormatter {
         }
     }
     formatDataModel1(token, vc) {
-        if (vc.issued) {
-            token.iat = expressDateInSeconds(vc.issued);
-            token.nbf = expressDateInSeconds(vc.issued);
+        var _a, _b, _c, _d;
+        const nbf = (_a = vc.validFrom) !== null && _a !== void 0 ? _a : ((_b = vc.issuanceDate) !== null && _b !== void 0 ? _b : vc.issued);
+        const iat = (_c = vc.issuanceDate) !== null && _c !== void 0 ? _c : ((_d = vc.issued) !== null && _d !== void 0 ? _d : vc.validFrom);
+        if (nbf) {
+            token.nbf = expressDateInSeconds(nbf);
         }
-        else if (vc.issuanceDate) {
-            token.iat = expressDateInSeconds(vc.issuanceDate);
-            token.nbf = expressDateInSeconds(vc.issuanceDate);
-        }
-        else if (vc.validFrom) {
-            token.iat = expressDateInSeconds(vc.validFrom);
-            token.nbf = expressDateInSeconds(vc.validFrom);
+        if (iat) {
+            token.iat = expressDateInSeconds(iat);
         }
         if (vc.expirationDate) {
-            token.exp = Date.parse(vc.validUntil);
+            token.exp = expressDateInSeconds(vc.expirationDate);
         }
         return token;
     }

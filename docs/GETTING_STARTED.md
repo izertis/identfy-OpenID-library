@@ -51,11 +51,11 @@ The library defines multiple builders that can be used to generate authorization
 
 ### Relying Party
 
-To manage the OpenID process for issuers or any other entity interested in authorization/authentication, the ***OpenIdRelyingParty*** class is defined. For its construction, the user should provide the metadata of the authorization service, an instance of ***DidResolver*** and a callback that allows to obtain the default metadata from the clients. The latter allows the metadata to be bound to the use case, eliminating the need for clients to specify it in full. In practice, the metadata implicitly specified by the user will be combined with the default metadata, the former prevailing over the latter.
+To manage the OpenID process for issuers or any other entity interested in authorization/authentication, the ***OpenIDReliyingParty*** class is defined. For its construction, the user should provide the metadata of the authorization service, an instance of ***DidResolver*** and a callback that allows to obtain the default metadata from the clients. The latter allows the metadata to be bound to the use case, eliminating the need for clients to specify it in full. In practice, the metadata implicitly specified by the user will be combined with the default metadata, the former prevailing over the latter.
 
 
 ```ts
-const rp = new OpenIDRelyingParty(
+const rp = new OpenIDReliyingParty(
     async () => {
       return {
         "authorization_endpoint": "openid:",
@@ -140,11 +140,11 @@ The call accepts the following optional parameters:
 export type CreateIdTokenRequestOptionalParams = {
   /**
    * Response mode to specify in the ID Token
-   * @defaultValue "direct_post" 
+   * @defaultValue "direct_post"
    */
   responseMode?: AuthzResponseMode;
   /**
-   * Additional payload to include in the JWT 
+   * Additional payload to include in the JWT
    */
   additionalPayload?: Record<string, any>;
   /**
@@ -212,6 +212,70 @@ const _tokenResponse = await rp.generateAccessToken(
 The method enables several optional parameters that must be supplied depending on the `grant_type` supported:
 - `authorization_code`: Must supply a callback for the verification of the code itself and a second one for the verification of the PKCE Challenge that must have been delivered by the user in a previous authorization request.
 - `pre-authorize_code`: It must supply a callback for the verification of the code itself that additionally receives the PIN sent by the user.
+
+#### Create VP Token Request
+```ts
+const vpRequest = await rp.createVpTokenRequest(
+  verifiedAuthzRequest.authzRequest.client_metadata?.authorization_endpoint!,
+  verifiedAuthzRequest.authzRequest.client_id,
+  authServerUrl + "/direct_post",
+  signCallback
+);
+```
+The call accepts the following additional parameters:
+```ts
+export type CreateVpTokenRequestOptionalParams = {
+  /**
+ * Response mode to specify in the ID Token
+ * @defaultValue "direct_post"
+ */
+  responseMode?: AuthzResponseMode;
+  /**
+   * Additional payload to include in the JWT
+   */
+  additionalPayload?: Record<string, any>;
+  /**
+   * The state to indicate in the JWT
+   */
+  state?: string;
+  /**
+   * The nonce to indicate in the JWT.
+   * @defaultValue UUID randomly generated
+   */
+  nonce?: string;
+  /**
+   * The expiration time of the JWT. Must be in seconds
+   * @defaultValue 1 hour
+   */
+  expirationTime?: number;
+  /**
+   * The scope to include in the JWT
+   */
+  scope?: string;
+  /**
+   * The presentation definition to include in the JWT
+   */
+  presentation_definition?: DIFPresentationDefinition;
+  /**
+   * The URI in which the presentation definition can be retrieved
+   */
+  presentation_definition_uri?: string
+}
+```
+
+#### Verify VP Token Response
+```ts
+async function ValidNonceCallback() {
+  // It is used to check the validity of the nonce contained inside the VP Token
+  return { valid: true };
+}
+const presentationDefinition = getPresentationDefinition();
+await rp.verifyVpTokenResponse(
+  vpResponse,
+  presentationDefinition,
+  ValidNonceCallback
+);
+```
 
 ## Code of contribution
 

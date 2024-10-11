@@ -1,5 +1,5 @@
 import { W3CVerifiableCredentialFormats } from "../../common/formats/index.js";
-import { W3CCredentialStatus, W3CSingleCredentialSubject, W3CVcSchemaDefinition, W3CVerifiableCredential } from "../../common/interfaces/w3c_verifiable_credential.interface.js";
+import { W3CCredentialStatus, W3CSingleCredentialSubject, W3CTermsOfUse, W3CVcSchemaDefinition, W3CVerifiableCredential } from "../../common/interfaces/w3c_verifiable_credential.interface.js";
 import { CompactVc, VerificationResult } from "../../common/types/index.js";
 import { JWK } from "jose";
 import { JwtHeader, JwtPayload } from "jsonwebtoken";
@@ -42,6 +42,13 @@ export interface ExtendedCredentialDataOrDeferred extends CredentialDataOrDeferr
     format: W3CVerifiableCredentialFormats;
 }
 /**
+ * Function type that resolve credential subject
+ * @param accessTokenSubject
+ * @param proofIssuer
+ * @returns Credential Subject
+ */
+export type ResolveCredentialSubject = (accessTokenSubject: string, proofIssuer: string) => Promise<string>;
+/**
  * Function type that allows to recover the challenge nonce expected for a control proof
  * @param clientId: The client identifier in a control proof
  * @returns The expected challenge nonce in string format
@@ -52,7 +59,7 @@ export type ChallengeNonceRetrieval = (clientId: string) => Promise<string>;
  * @param types Types of the VC
  * @return The W3C schema definition of VC
  */
-export type GetCredentialSchema = (types: string[]) => Promise<W3CVcSchemaDefinition[]>;
+export type GetCredentialSchema = (types: string[]) => Promise<W3CVcSchemaDefinition | W3CVcSchemaDefinition[]>;
 /**
  * Function type that allows to recover the subject data of a VC
  * @param types The types of the VC to generate
@@ -72,6 +79,14 @@ export interface CredentialDataOrDeferred {
      * A deferred code that can be exchange for a VC
      */
     deferredCode?: string;
+    /** The expiration time in UTC and in ISO format. Can't be combined with expiresIn */
+    validUntil?: string;
+    /** For how long will be valid the VC. Can't be combined with validUntil */
+    expiresInSeconds?: number;
+    /** When the VC will be valid */
+    nbf?: string;
+    /** Issuance in ISO format. If not defined, the current datetime is taken */
+    iss?: string;
 }
 /**
  *
@@ -88,19 +103,19 @@ export interface GenerateCredentialReponseOptionalParams extends BaseOptionalPar
  */
 export interface BaseOptionalParams {
     /**
-     * Function that allows to obtain until which date the VC to generate is valid.
-     * If not specified, then the VC won't have an expiration date
-     * @param types The types of the credential
-     * @returns The expiration time in UTC and in ISO string format
-     */
-    getValidUntil?: (types: string[]) => Promise<string>;
-    /**
      * Function type that allows to generate the "credentialStatus" attribute of a VC
      * @param types Types of the VC to generate
      * @param credentialId The identifier of the VC
      * @param holder The identifier of the holder of the VC
      */
-    getCredentialStatus?: (types: string[], credentialId: string, holder: string) => Promise<W3CCredentialStatus>;
+    getCredentialStatus?: (types: string[], credentialId: string, holder: string) => Promise<W3CCredentialStatus | W3CCredentialStatus[]>;
+    /**
+     *
+     * @param types
+     * @param holder
+     * @returns
+     */
+    getTermsOfUse?: (types: string[], holder: string) => Promise<W3CTermsOfUse | W3CTermsOfUse[]>;
     /**
      * Challenge nonce to send with the credential response
      */

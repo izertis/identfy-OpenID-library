@@ -32,8 +32,7 @@ export class AuthzRequestBuilder {
      * @param issuer_state The "issuer_state" attribute of authorization request
      * @returns Instance of AuthzRequestBuilder
      */
-    static holderAuthzRequestBuilder(response_type, client_id, redirect_uri, metadata, code_challenge, code_challenge_method, // TODO: Define new type
-    issuer_state) {
+    static holderAuthzRequestBuilder(response_type, client_id, redirect_uri, metadata, code_challenge, code_challenge_method, issuer_state) {
         const builder = new AuthzRequestBuilder(response_type, client_id, redirect_uri)
             .withMetadata(metadata)
             .withCodeChallenge(code_challenge, code_challenge_method);

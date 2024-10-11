@@ -40,8 +40,7 @@ export declare class AuthzRequestBuilder {
      * @param issuer_state The "issuer_state" attribute of authorization request
      * @returns Instance of AuthzRequestBuilder
      */
-    static holderAuthzRequestBuilder(response_type: AuthzResponseType, client_id: string, redirect_uri: string, metadata: HolderMetadata, code_challenge: string, code_challenge_method: string, // TODO: Define new type
-    issuer_state?: string): AuthzRequestBuilder;
+    static holderAuthzRequestBuilder(response_type: AuthzResponseType, client_id: string, redirect_uri: string, metadata: HolderMetadata, code_challenge: string, code_challenge_method: string, issuer_state?: string): AuthzRequestBuilder;
     /**
      * Generates a build with the required data for a AuthzRequest sent
      * by a Service Wallet

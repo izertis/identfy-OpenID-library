@@ -1,3 +1,4 @@
+import { ClientAssertionTypes } from "../formats/index.js";
 import { GrantType } from "../types/index.js";
 
 /**
@@ -12,4 +13,6 @@ export interface TokenRequest {
   "pre-authorized_code"?: string;
   user_pin?: string;
   vp_token?: string;
+  client_assertion?: string;
+  client_assertion_type?: ClientAssertionTypes
 }

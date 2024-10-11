@@ -1,7 +1,7 @@
 import { Resolver } from "did-resolver";
 import { JWK } from "jose";
 import { Jwt } from "jsonwebtoken";
-import { W3CDataModel } from "../../common/formats/index.js";
+import { W3CDataModel, W3CVerifiableCredentialFormats } from "../../common/formats/index.js";
 import { CredentialRequest } from "../../common/interfaces/credential_request.interface.js";
 import { IssuerMetadata } from "../../common/interfaces/issuer_metadata.interface.js";
 import { CredentialResponse } from "../../common/interfaces/credential_response.interface.js";
@@ -17,6 +17,7 @@ export declare class W3CVcIssuer {
     private cNonceRetrieval;
     private getVcSchema;
     private getCredentialData;
+    private resolveCredentialSubject?;
     /**
      * Constructor of the issuer
      * @param metadata Issuer metadata
@@ -30,7 +31,7 @@ export declare class W3CVcIssuer {
      * include in the VC
      * It can also be used to specify if the user should follow the deferred flow
      */
-    constructor(metadata: IssuerMetadata, didResolver: Resolver, issuerDid: string, signCallback: VcIssuerTypes.VcSignCallback, cNonceRetrieval: VcIssuerTypes.ChallengeNonceRetrieval, getVcSchema: VcIssuerTypes.GetCredentialSchema, getCredentialData: VcIssuerTypes.GetCredentialData);
+    constructor(metadata: IssuerMetadata, didResolver: Resolver, issuerDid: string, signCallback: VcIssuerTypes.VcSignCallback, cNonceRetrieval: VcIssuerTypes.ChallengeNonceRetrieval, getVcSchema: VcIssuerTypes.GetCredentialSchema, getCredentialData: VcIssuerTypes.GetCredentialData, resolveCredentialSubject?: VcIssuerTypes.ResolveCredentialSubject | undefined);
     /**
      * Allows to verify a JWT Access Token in string format
      * @param token The access token
@@ -53,6 +54,9 @@ export declare class W3CVcIssuer {
      * @throws If data provided is incorrect
      */
     generateCredentialResponse(acessToken: string | Jwt, credentialRequest: CredentialRequest, dataModel: W3CDataModel, optionalParamaters?: VcIssuerTypes.GenerateCredentialReponseOptionalParams): Promise<CredentialResponse>;
+    generateVcDirectMode(did: string, dataModel: W3CDataModel, types: string[], format: W3CVerifiableCredentialFormats, optionalParamaters?: VcIssuerTypes.BaseOptionalParams): Promise<CredentialResponse>;
+    private generateCredentialTimeStamps;
+    private generateVcId;
     private generateW3CDataForV1;
     private generateW3CDataForV2;
     private generateW3CCredential;
