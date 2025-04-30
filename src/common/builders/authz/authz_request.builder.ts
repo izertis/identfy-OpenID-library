@@ -1,12 +1,12 @@
-import { InvalidDataProvided } from "../../classes/index.js";
-import { DEFAULT_SCOPE } from "../../constants/index.js";
-import { AuthorizationDetails } from "../../interfaces/authz_details.interface.js";
-import { AuthzRequest } from "../../interfaces/authz_request.interface.js";
+import {InvalidDataProvided} from '../../classes/index.js';
+import {DEFAULT_SCOPE} from '../../constants/index.js';
+import {AuthorizationDetails} from '../../interfaces/authz_details.interface.js';
+import {AuthzRequest} from '../../interfaces/authz_request.interface.js';
 import {
   HolderMetadata,
-  ServiceMetadata
-} from "../../interfaces/client_metadata.interface.js";
-import { AuthzResponseType } from "../../types/index.js";
+  ServiceMetadata,
+} from '../../interfaces/client_metadata.interface.js';
+import {AuthzResponseType} from '../../types/index.js';
 
 /**
  * Builder class for AuthzRequest
@@ -33,8 +33,8 @@ export class AuthzRequestBuilder {
     private response_type: AuthzResponseType,
     private client_id: string,
     private redirect_uri: string,
-    private imposeOpenIdScope = true
-  ) { }
+    private imposeOpenIdScope = true,
+  ) {}
 
   /**
    * Generates a build with the required data for a AuthzRequest sent
@@ -55,13 +55,13 @@ export class AuthzRequestBuilder {
     redirect_uri: string,
     metadata: HolderMetadata,
     code_challenge: string,
-    code_challenge_method: string,
+    code_challenge_method: string, // TODO: Define new type
     issuer_state?: string,
   ) {
     const builder = new AuthzRequestBuilder(
       response_type,
       client_id,
-      redirect_uri
+      redirect_uri,
     )
       .withMetadata(metadata)
       .withCodeChallenge(code_challenge, code_challenge_method);
@@ -91,9 +91,8 @@ export class AuthzRequestBuilder {
     const builder = new AuthzRequestBuilder(
       response_type,
       client_id,
-      redirect_uri
-    )
-      .withMetadata(metadata);
+      redirect_uri,
+    ).withMetadata(metadata);
     if (issuer_state) {
       builder.withIssuerState(issuer_state);
     }
@@ -105,7 +104,9 @@ export class AuthzRequestBuilder {
    * @param metadata The metadata to include
    * @returns This object
    */
-  withMetadata(metadata: HolderMetadata | ServiceMetadata): AuthzRequestBuilder {
+  withMetadata(
+    metadata: HolderMetadata | ServiceMetadata,
+  ): AuthzRequestBuilder {
     this.client_metadata = metadata;
     return this;
   }
@@ -116,7 +117,10 @@ export class AuthzRequestBuilder {
    * @param method The method that have to be used to verify the challenge
    * @returns This object
    */
-  withCodeChallenge(code_challenge: string, method: string): AuthzRequestBuilder {
+  withCodeChallenge(
+    code_challenge: string,
+    method: string,
+  ): AuthzRequestBuilder {
     this.code_challenge = code_challenge;
     this.code_challenge_method = method;
     return this;
@@ -170,7 +174,9 @@ export class AuthzRequestBuilder {
    * @param authorizationDetails The details to include
    * @returns This object
    */
-  addAuthzDetails(authorizationDetails: AuthorizationDetails): AuthzRequestBuilder {
+  addAuthzDetails(
+    authorizationDetails: AuthorizationDetails,
+  ): AuthzRequestBuilder {
     if (!this.authorization_details) {
       this.authorization_details = [];
     }
@@ -194,7 +200,7 @@ export class AuthzRequestBuilder {
       nonce: this.nonce,
       code_challenge: this.code_challenge,
       code_challenge_method: this.code_challenge_method,
-      client_metadata: this.client_metadata
-    }
+      client_metadata: this.client_metadata,
+    };
   }
 }

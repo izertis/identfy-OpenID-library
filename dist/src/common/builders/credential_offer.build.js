@@ -3,13 +3,15 @@ import { v4 as uuidv4 } from 'uuid';
  * Builder class for CredentialOffer
  */
 export class CredentialOfferBuilder {
+    credential_issuer;
+    credentials = [];
+    grants;
     /**
      * Constructor for CredentialOfferBuilder
      * @param credential_issuer The URI of the credential issuer
      */
     constructor(credential_issuer) {
         this.credential_issuer = credential_issuer;
-        this.credentials = [];
     }
     /**
      * Generates a builder with the required data for an
@@ -70,16 +72,16 @@ export class CredentialOfferBuilder {
         }
         if (!this.grants) {
             this.grants = {
-                "urn:ietf:params:oauth:grant-type:pre-authorized_code": {
-                    "pre-authorized_code": preCode,
-                    user_pin_required: pinRequired
-                }
+                'urn:ietf:params:oauth:grant-type:pre-authorized_code': {
+                    'pre-authorized_code': preCode,
+                    user_pin_required: pinRequired,
+                },
             };
         }
         else {
-            this.grants["urn:ietf:params:oauth:grant-type:pre-authorized_code"] = {
-                "pre-authorized_code": preCode,
-                user_pin_required: pinRequired
+            this.grants['urn:ietf:params:oauth:grant-type:pre-authorized_code'] = {
+                'pre-authorized_code': preCode,
+                user_pin_required: pinRequired,
             };
         }
         return this;
@@ -92,7 +94,8 @@ export class CredentialOfferBuilder {
         return {
             credential_issuer: this.credential_issuer,
             credentials: this.credentials,
-            grants: this.grants
+            grants: this.grants,
         };
     }
 }
+//# sourceMappingURL=credential_offer.build.js.map

@@ -1,12 +1,12 @@
-import { v4 as uuidv4 } from 'uuid';
-import { W3CVerifiableCredentialFormats } from "../formats/index.js";
+import {v4 as uuidv4} from 'uuid';
+import {W3CVerifiableCredentialFormats} from '../formats/index.js';
 import {
   CredentialSupported,
   IssuerMetadata,
-  VerifiableCredentialDisplay
+  VerifiableCredentialDisplay,
 } from '../interfaces/issuer_metadata.interface.js';
-import { isHttps } from '../utils/index.js';
-import { InternalError } from '../classes/index.js';
+import {isHttps} from '../utils/index.js';
+import {InternalNonceError} from '../classes/index.js';
 
 /**
  * Builder class for Credential Issuer Metadata
@@ -32,10 +32,12 @@ export class IssuerMetadataBuilder {
   ) {
     if (imposeHttps) {
       if (!isHttps(credential_issuer)) {
-        throw new InternalError("Is not https");
+        // TODO: Define error enum
+        throw new InternalNonceError('Is not https');
       }
       if (!isHttps(credential_endpoint)) {
-        throw new InternalError("Is not https");
+        // TODO: Define error enum
+        throw new InternalNonceError('Is not https');
       }
     }
   }
@@ -43,7 +45,8 @@ export class IssuerMetadataBuilder {
   private assertUrlIsHttps(url: string, assertedParameter: string) {
     if (this.imposeHttps) {
       if (!isHttps(url)) {
-        throw new InternalError(`${assertedParameter} is not https`);
+        // TODO: Define error enum
+        throw new InternalNonceError(`${assertedParameter} is not https`);
       }
     }
   }
@@ -54,7 +57,7 @@ export class IssuerMetadataBuilder {
    * @returns This object
    */
   withAuthorizationServer(url: string): IssuerMetadataBuilder {
-    this.assertUrlIsHttps(url, "authorization_server");
+    this.assertUrlIsHttps(url, 'authorization_server');
     this.authorization_server = url;
     return this;
   }
@@ -65,7 +68,7 @@ export class IssuerMetadataBuilder {
    * @returns This object
    */
   withDeferredCredentialEndpoint(url: string): IssuerMetadataBuilder {
-    this.assertUrlIsHttps(url, "deferred_credential_endpoint");
+    this.assertUrlIsHttps(url, 'deferred_credential_endpoint');
     this.deferred_credential_endpoint = url;
     return this;
   }
@@ -76,7 +79,7 @@ export class IssuerMetadataBuilder {
    * @returns This object
    */
   withBatchCredentialEndpoint(url: string): IssuerMetadataBuilder {
-    this.assertUrlIsHttps(url, "batch_credential_endpoint");
+    this.assertUrlIsHttps(url, 'batch_credential_endpoint');
     this.batch_credential_endpoint = url;
     return this;
   }
@@ -87,13 +90,16 @@ export class IssuerMetadataBuilder {
    * @returns This object
    * @throws If the credential already exists
    */
-  addCredentialSupported(supportedCredential: CredentialSupported): IssuerMetadataBuilder {
+  addCredentialSupported(
+    supportedCredential: CredentialSupported,
+  ): IssuerMetadataBuilder {
     let id: string;
     if (!supportedCredential.id) {
       id = uuidv4();
     } else {
       if (this.credentials_supported.get(supportedCredential.id)) {
-        throw new InternalError("Credential supported already defined");
+        // TODO: Define error enum
+        throw new InternalNonceError('Credential supported already defined');
       }
       id = supportedCredential.id;
     }
@@ -112,8 +118,8 @@ export class IssuerMetadataBuilder {
       credential_endpoint: this.credential_endpoint,
       deferred_credential_endpoint: this.deferred_credential_endpoint,
       batch_credential_endpoint: this.batch_credential_endpoint,
-      credentials_supported: Array.from(this.credentials_supported.values())
-    };;
+      credentials_supported: Array.from(this.credentials_supported.values()),
+    };
   }
 }
 
@@ -121,7 +127,7 @@ export class IssuerMetadataBuilder {
  * Builder class for Credential Supported objects in Credential Issuer Metadata
  */
 export class CredentialSupportedBuilder {
-  private format: W3CVerifiableCredentialFormats = "jwt_vc_json";
+  private format: W3CVerifiableCredentialFormats = 'jwt_vc_json';
   private id?: string;
   private types: string[] = [];
   private display?: VerifiableCredentialDisplay[];
@@ -131,7 +137,9 @@ export class CredentialSupportedBuilder {
    * @param format The W3C VC format
    * @returns This object
    */
-  withFormat(format: W3CVerifiableCredentialFormats): CredentialSupportedBuilder {
+  withFormat(
+    format: W3CVerifiableCredentialFormats,
+  ): CredentialSupportedBuilder {
     this.format = format;
     return this;
   }
@@ -178,10 +186,9 @@ export class CredentialSupportedBuilder {
       format: this.format,
       id: this.id,
       types: this.types,
-      display: this.display
-    }
+      display: this.display,
+    };
   }
-
 }
 
 /**
@@ -192,14 +199,14 @@ export class VerifiableCredentialDisplayBuilder {
    * Constructor of VerifiableCredentialDisplayBuilder
    * @param name String value of a display name for the Credential Issuer.
    */
-  constructor(private name: string) { }
+  constructor(private name: string) {}
   private locale?: string;
   private logo?: JSON;
   private url?: string;
   private alt_text?: string;
   private description?: string;
   private background_color?: string;
-  private text_color?: string
+  private text_color?: string;
 
   /**
    * Set the locale information of the display information
@@ -285,7 +292,7 @@ export class VerifiableCredentialDisplayBuilder {
       alt_text: this.alt_text,
       description: this.description,
       background_color: this.background_color,
-      text_color: this.text_color
-    }
+      text_color: this.text_color,
+    };
   }
 }

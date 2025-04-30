@@ -1,10 +1,11 @@
-import { InternalError } from "../../common/classes/index.js";
-import { W3CDataModel } from "../../common/formats/index.js";
-import { expressDateInSeconds } from "../../common/utils/time.js";
+import { InternalNonceError } from '../../common/classes/index.js';
+import { W3CDataModel, } from '../../common/formats/index.js';
+import { expressDateInSeconds } from '../../common/utils/time.js';
 /**
  * Abstract class allowing to express unsigned W3C credentials in different formats.
  */
 export class VcFormatter {
+    dataModel;
     constructor(dataModel) {
         this.dataModel = dataModel;
     }
@@ -15,14 +16,15 @@ export class VcFormatter {
      * @returns A VcFormatter that allow to express unsigned VC in the specified format
      */
     static fromVcFormat(format, dataModel) {
-        if (format === "jwt_vc" || format === "jwt_vc_json") {
+        if (format === 'jwt_vc' || format === 'jwt_vc_json') {
             return new JwtVcFormatter(dataModel);
         }
-        else if (format === "jwt_vc_json-ld" || format === "ldp_vc") {
-            throw new InternalError("Unimplemented");
+        else if (format === 'jwt_vc_json-ld' || format === 'ldp_vc') {
+            // TODO:
+            throw new InternalNonceError('Unimplemented');
         }
         else {
-            throw new InternalError("Unsupported format");
+            throw new InternalNonceError('Unsupported format');
         }
     }
     /**
@@ -38,7 +40,7 @@ class JwtVcFormatter extends VcFormatter {
         const token = {
             sub: vc.credentialSubject.id,
             iss: vc.issuer,
-            vc
+            vc,
         };
         if (vc.id) {
             token.jti = vc.id;
@@ -51,9 +53,8 @@ class JwtVcFormatter extends VcFormatter {
         }
     }
     formatDataModel1(token, vc) {
-        var _a, _b, _c, _d;
-        const nbf = (_a = vc.validFrom) !== null && _a !== void 0 ? _a : ((_b = vc.issuanceDate) !== null && _b !== void 0 ? _b : vc.issued);
-        const iat = (_c = vc.issuanceDate) !== null && _c !== void 0 ? _c : ((_d = vc.issued) !== null && _d !== void 0 ? _d : vc.validFrom);
+        const nbf = vc.validFrom ?? vc.issuanceDate ?? vc.issued;
+        const iat = vc.issuanceDate ?? vc.issued ?? vc.validFrom;
         if (nbf) {
             token.nbf = expressDateInSeconds(nbf);
         }
@@ -76,3 +77,4 @@ class JwtVcFormatter extends VcFormatter {
         return token;
     }
 }
+//# sourceMappingURL=formatters.js.map

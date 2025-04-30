@@ -1,6 +1,6 @@
-import { OPENID_CREDENTIAL_AUTHZ_DETAILS_TYPE } from "../../constants/index.js";
-import { W3CVerifiableCredentialFormats } from "../../formats/index.js";
-import { AuthorizationDetails } from "../../interfaces/authz_details.interface.js";
+import {OPENID_CREDENTIAL_AUTHZ_DETAILS_TYPE} from '../../constants/index.js';
+import {W3CVerifiableCredentialFormats} from '../../formats/index.js';
+import {AuthorizationDetails} from '../../interfaces/authz_details.interface.js';
 
 /**
  * Builder class for AuthorizationDetails
@@ -16,18 +16,20 @@ export class AuthzDetailsBuilder {
   private constructor(
     private type: string,
     private format: W3CVerifiableCredentialFormats,
-  ) { }
+  ) {}
 
   /**
-   * Generate a builder with the required parameters to build 
+   * Generate a builder with the required parameters to build
    * an instance of AuthorizationDetails valid for the issuance of W3C VC
    * @param format W3C VC format
    * @returns Instance of AuthzDetailsBuilder
    */
-  static openIdCredentialBuilder(format: W3CVerifiableCredentialFormats): AuthzDetailsBuilder {
+  static openIdCredentialBuilder(
+    format: W3CVerifiableCredentialFormats,
+  ): AuthzDetailsBuilder {
     return new AuthzDetailsBuilder(
       OPENID_CREDENTIAL_AUTHZ_DETAILS_TYPE,
-      format
+      format,
     );
   }
 
@@ -104,7 +106,7 @@ export class AuthzDetailsBuilder {
       actions: this.actions,
       datatypes: this.datatypes,
       identifier: this.identifier,
-      privileges: this.privileges
-    }
+      privileges: this.privileges,
+    };
   }
 }

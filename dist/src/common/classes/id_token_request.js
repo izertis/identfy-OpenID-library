@@ -2,6 +2,9 @@
  * Define an authorisation request that expects an ID token as "response_type"
  */
 export class IdTokenRequest {
+    requestParams;
+    request;
+    clientAuthorizationEndpoint;
     /**
      * Constructor of the class
      * @param requestParams ID Token request parameters
@@ -18,6 +21,10 @@ export class IdTokenRequest {
      * @returns The request in URL format
      */
     toUri() {
-        return `${this.clientAuthorizationEndpoint}?${new URLSearchParams(Object.entries(Object.assign(Object.assign({}, this.requestParams), { request: this.request }))).toString()}`;
+        return `${this.clientAuthorizationEndpoint}?${new URLSearchParams(Object.entries({
+            ...this.requestParams,
+            request: this.request,
+        })).toString()}`;
     }
 }
+//# sourceMappingURL=id_token_request.js.map

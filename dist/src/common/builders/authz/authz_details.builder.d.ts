@@ -1,5 +1,5 @@
-import { W3CVerifiableCredentialFormats } from "../../formats/index.js";
-import { AuthorizationDetails } from "../../interfaces/authz_details.interface.js";
+import { W3CVerifiableCredentialFormats } from '../../formats/index.js';
+import { AuthorizationDetails } from '../../interfaces/authz_details.interface.js';
 /**
  * Builder class for AuthorizationDetails
  */

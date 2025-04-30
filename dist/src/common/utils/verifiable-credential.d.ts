@@ -1,4 +1,4 @@
-import { W3CVerifiableCredential } from "../interfaces";
+import { W3CVerifiableCredential } from '../interfaces/index.js';
 /**
  * Allows to obtain data from a VC given a JSON PATH
  * @param vc The VC from which obtain the data

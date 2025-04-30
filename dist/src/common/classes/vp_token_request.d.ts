@@ -1,5 +1,5 @@
-import { AuthzResponseMode } from "../formats/index.js";
-import { DIFPresentationDefinition } from "../interfaces/presentation_definition.interface.js";
+import { AuthzResponseMode } from '../formats/index.js';
+import { DIFPresentationDefinition } from '../interfaces/presentation_definition.interface.js';
 /**
  * Define an authorisation request that expects an VP token as "response_type"
  */
@@ -24,7 +24,7 @@ export declare class VpTokenRequest {
  * Parameters of a VP Token Request
  */
 export interface VpTokenRequestParams {
-    response_type: "vp_token";
+    response_type: 'vp_token';
     presentation_definition?: DIFPresentationDefinition;
     presentation_definition_uri?: string;
     client_id: string;

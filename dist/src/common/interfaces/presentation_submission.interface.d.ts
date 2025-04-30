@@ -1,4 +1,4 @@
-import { W3CVerifiableCredentialFormats, W3CVerifiablePresentationFormats } from "../formats";
+import { W3CVerifiableCredentialFormats, W3CVerifiablePresentationFormats } from '../formats/index.js';
 /**
  * Presentation Submission data structure according to
  * https://identity.foundation/presentation-exchange/spec/v2.0.0/#presentation-submission

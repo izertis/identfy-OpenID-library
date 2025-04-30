@@ -1,8 +1,8 @@
-import { JWA_ALGS } from "../constants/index.js";
-import { GrantType, VpFormatsSupported } from "../types/index.js";
+import {JWA_ALGS} from '../constants/index.js';
+import {GrantType, VpFormatsSupported} from '../types/index.js';
 
 /**
- * Defines the metadata of an Authorization Server in accordance to 
+ * Defines the metadata of an Authorization Server in accordance to
  * RFC 8414 "OAuth 2.0 Authorization Server Metadata"
  */
 export interface AuthServerMetadata {
@@ -25,5 +25,5 @@ export interface AuthServerMetadata {
   vp_formats_supported?: VpFormatsSupported;
   subject_syntax_types_supported?: string[];
   subject_trust_frameworks_supported?: string[];
-  id_token_types_supported?: string[]
+  id_token_types_supported?: string[];
 }

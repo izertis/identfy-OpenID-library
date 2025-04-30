@@ -1,76 +1,111 @@
-import { Resolver } from "did-resolver";
-import { JWK } from "jose";
-import { Jwt } from "jsonwebtoken";
-import { W3CDataModel, W3CVerifiableCredentialFormats } from "../../common/formats/index.js";
-import { CredentialRequest } from "../../common/interfaces/credential_request.interface.js";
-import { IssuerMetadata } from "../../common/interfaces/issuer_metadata.interface.js";
-import { CredentialResponse } from "../../common/interfaces/credential_response.interface.js";
-import * as VcIssuerTypes from "./types.js";
+import { Resolver } from 'did-resolver';
+import { JWK } from 'jose';
+import { Jwt } from 'jsonwebtoken';
+import { W3CDataModel, W3CVerifiableCredentialFormats } from '../../common/formats/index.js';
+import { CredentialRequest } from '../../common/interfaces/credential_request.interface.js';
+import { IssuerMetadata } from '../../common/interfaces/issuer_metadata.interface.js';
+import { CredentialResponse } from '../../common/interfaces/credential_response.interface.js';
+import * as VcIssuerTypes from './types.js';
+import { CredentialDataManager } from './credential_data_manager.js';
+import { StateManager } from '../state/index.js';
 /**
- * W3C credentials issuer in both deferred and In-Time flows
+ * Component responsible for issuing W3C Verifiable Credentials
+ * following the OID4VCI specification.
+ *
+ * Supports both immediate and deferred issuance flows. Validates requests,
+ * signs credentials, and generates the expected credential response objects.
  */
 export declare class W3CVcIssuer {
     private metadata;
     private didResolver;
     private issuerDid;
     private signCallback;
-    private cNonceRetrieval;
-    private getVcSchema;
-    private getCredentialData;
-    private resolveCredentialSubject?;
+    private credentialDataManager;
+    private vcTypesContextRelationship?;
+    private nonceManager;
     /**
-     * Constructor of the issuer
-     * @param metadata Issuer metadata
-     * @param didResolver Object that allows to resolve the DIDs found
-     * @param issuerDid The DID of the issuer
-     * @param signCallback Callback used to sign the VC generated
-     * @param cNonceRetrieval Callback to recover the challenge nonce expected
-     * for a control proof
-     * @param getVcSchema Callback to recover the schema associated with a VC
-     * @param getCredentialData Callback to recover the subject data to
-     * include in the VC
-     * It can also be used to specify if the user should follow the deferred flow
+     * Initializes the W3CVcIssuer.
+     *
+     * @param metadata - Metadata of the credential issuer (as defined in OID4VCI).
+     * @param didResolver - Resolver used to fetch DID Documents.
+     * @param issuerDid - DID of the entity issuing the credentials.
+     * @param signCallback - Callback used to sign the VC before returning it.
+     * @param stateManager - Manages challenge nonces and issuance-related state.
+     * @param credentialDataManager - Provides subject data for the VC or deferred flow logic.
+     * @param vcTypesContextRelationship - (Optional) Mapping from VC types to additional context URLs.
      */
-    constructor(metadata: IssuerMetadata, didResolver: Resolver, issuerDid: string, signCallback: VcIssuerTypes.VcSignCallback, cNonceRetrieval: VcIssuerTypes.ChallengeNonceRetrieval, getVcSchema: VcIssuerTypes.GetCredentialSchema, getCredentialData: VcIssuerTypes.GetCredentialData, resolveCredentialSubject?: VcIssuerTypes.ResolveCredentialSubject | undefined);
+    constructor(metadata: IssuerMetadata, didResolver: Resolver, issuerDid: string, signCallback: VcIssuerTypes.VcSignCallback, stateManager: StateManager, credentialDataManager: CredentialDataManager, vcTypesContextRelationship?: Record<string, string> | undefined);
     /**
-     * Allows to verify a JWT Access Token in string format
-     * @param token The access token
-     * @param publicKeyJwkAuthServer The public key that should verify the token
-     * @param tokenVerifyCallback A callback that can be used to verify to perform an
-     * additional verification of the contents of the token
-     * @returns Access token in JWT format
-     * @throws If data provided is incorrect
+     * Verifies a JWT Access Token received from a client.
+     *
+     * This method checks the token's validity (signature, expiration, audience)
+     * using the public key of the authorization server. Optionally, it can also
+     * apply custom logic through a callback to further validate the token's payload.
+     *
+     * @param token - JWT Access Token in string format.
+     * @param publicKeyJwkAuthServer - Public JWK of the authorization server used to verify the signature.
+     * @param tokenVerifyCallback - (Optional) Additional logic to validate the decoded token (e.g. claims).
+     * @returns A decoded JWT object if verification succeeds.
+     * @throws {InvalidToken} If the token is invalid, expired, has wrong audience, or fails custom validation.
      */
     verifyAccessToken(token: string, publicKeyJwkAuthServer: JWK, tokenVerifyCallback?: VcIssuerTypes.AccessTokenVerifyCallback): Promise<Jwt>;
     /**
-     * Allows to generate a Credential Response in accordance to
-     * the OID4VCI specification
-     * @param acessToken The access token needed to perform the operation
-     * @param credentialRequest The credential request sent by an user
-     * @param optionalParamaters A set of optional parameters that are only
-     * required if the
-     * token is provided in string format and that allows to verify it
-     * @returns A credential response with a VC or a deferred code
-     * @throws If data provided is incorrect
+     * Generates a Credential Response in compliance with the OpenID for Verifiable Credential Issuance (OID4VCI) specification.
+     *
+     * This method processes a credential request by:
+     * - Verifying the associated control proof using a previously issued `c_nonce`.
+     * - Validating that the proof signer matches the Access Token subject (when required).
+     * - Ensuring the requested credential types are authorized by the Access Token.
+     * - Issuing either a Verifiable Credential (VC) or a deferred credential code, depending on the flow.
+     *
+     * @param accessToken - Decoded Access Token containing authorization to issue the requested VC.
+     * @param credentialRequest - The credential request payload received from the client.
+     * @param dataModel - Indicates which W3C VC Data Model version to use (v1 or v2).
+     * @returns A {@link CredentialResponse} containing either a signed VC or an acceptance token for deferred issuance.
+     * @throws {InvalidCredentialRequest | InvalidToken | InvalidProof | InternalNonceError}
+     * If the request is malformed, unauthorized, or if the proof or nonce is invalid.
      */
-    generateCredentialResponse(acessToken: string | Jwt, credentialRequest: CredentialRequest, dataModel: W3CDataModel, optionalParamaters?: VcIssuerTypes.GenerateCredentialReponseOptionalParams): Promise<CredentialResponse>;
-    generateVcDirectMode(did: string, dataModel: W3CDataModel, types: string[], format: W3CVerifiableCredentialFormats, optionalParamaters?: VcIssuerTypes.BaseOptionalParams): Promise<CredentialResponse>;
+    generateCredentialResponse(acessToken: Jwt, credentialRequest: CredentialRequest, dataModel: W3CDataModel): Promise<CredentialResponse>;
+    private credentialResponseMatch;
+    /**
+     * Generates a Verifiable Credential (VC) without requiring an Access Token.
+     *
+     * This method is typically used in direct issuance flows (e.g., internal tools, testing, or
+     * controlled environments) where no authorization layer is applied.
+     *
+     * It directly triggers the generation of a credential using the provided holder DID, types,
+     * format, and data model version. The VC content is obtained through the configured
+     * {@link CredentialDataManager}.
+     *
+     * @param did - The subject identifier (DID) of the future holder of the VC.
+     * @param dataModel - Indicates whether the credential should follow the W3C VC Data Model v1 or v2.
+     * @param types - The array of types the credential must include.
+     * @param format - The serialization format of the credential (e.g., `ldp_vc`, `jwt_vc_json`, etc).
+     * @returns A {@link CredentialResponse} containing a signed VC.
+     * @throws {InvalidCredentialRequest} If the combination of types and format is not supported.
+     */
+    generateVcDirectMode(did: string, dataModel: W3CDataModel, types: string[], format: W3CVerifiableCredentialFormats): Promise<CredentialResponse>;
     private generateCredentialTimeStamps;
     private generateVcId;
     private generateW3CDataForV1;
     private generateW3CDataForV2;
+    private extendsVcContext;
     private generateW3CCredential;
     /**
-     * Allows to exchange a deferred code for a VC
-     * @param acceptanceToken The deferred code sent by the issuer in a
-     * previous instance
-     * @param deferredExchangeCallback A callback to verify the deferred code
-     * @param optionalParameters A set of optional parameters that allow to
-     * specify certain
-     * data of the VC generated
-     * @returns A credential response with the VC generated or a new
-     * (or the same) deferred code
+     * Exchanges a previously issued deferred acceptance token for a Verifiable Credential (VC).
+     *
+     * This method handles the final step of a deferred issuance flow. The client presents a
+     * previously issued `acceptance_token`, and this method either returns the issued credential
+     * (if ready), or provides a new `acceptance_token` to poll again later.
+     *
+     * Internally, it delegates the resolution of credential readiness and subject data to the
+     * configured {@link CredentialDataManager}.
+     *
+     * @param acceptanceToken - The token received in a previous deferred response, identifying the pending VC.
+     * @param dataModel - The W3C VC Data Model version to use (`v1` or `v2`).
+     * @returns A {@link CredentialResponse} containing either the signed VC or a new deferred token.
+     * @throws {InvalidToken} If the provided token is invalid, expired, or unrecognized.
      */
-    exchangeAcceptanceTokenForVc(acceptanceToken: string, deferredExchangeCallback: VcIssuerTypes.DeferredExchangeCallback, dataModel: W3CDataModel, optionalParameters?: VcIssuerTypes.BaseOptionalParams): Promise<CredentialResponse>;
+    exchangeAcceptanceTokenForVc(acceptanceToken: string, dataModel: W3CDataModel): Promise<CredentialResponse>;
     private checkCredentialTypesAndFormat;
 }

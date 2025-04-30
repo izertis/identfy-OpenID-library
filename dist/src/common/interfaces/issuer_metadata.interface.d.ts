@@ -1,4 +1,4 @@
-import { W3CVerifiableCredentialFormats } from "../formats/index.js";
+import { W3CVerifiableCredentialFormats } from '../formats/index.js';
 /**
  * Defines the credential issuer metadata in accordance to OID4VCI
  */

@@ -1,5 +1,5 @@
-import { JWA_ALGS } from "../constants/index.js";
-import { VpFormatsSupported } from "../types/index.js";
+import { JWA_ALGS } from '../constants/index.js';
+import { VpFormatsSupported } from '../types/index.js';
 /**
  * Defines the metadata for Wallets
  */

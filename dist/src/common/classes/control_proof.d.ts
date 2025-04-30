@@ -1,5 +1,5 @@
-import { ControlProofType } from "../types/index.js";
-import { Resolvable } from "did-resolver";
+import { ControlProofType } from '../types/index.js';
+import { Resolvable } from 'did-resolver';
 /**
  * Class defining the proof of possession of a key material.
  */

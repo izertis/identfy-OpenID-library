@@ -2,6 +2,9 @@
  * Represents an authorization response for the "code" response type
  */
 export class AuthorizationResponse {
+    uri;
+    code;
+    state;
     /**
      * Contructor of this class
      * @param uri The URI to which this response should be delivered
@@ -25,3 +28,4 @@ export class AuthorizationResponse {
         return `${this.uri}?${new URLSearchParams(Object.entries(params)).toString()}`;
     }
 }
+//# sourceMappingURL=authz_response.js.map

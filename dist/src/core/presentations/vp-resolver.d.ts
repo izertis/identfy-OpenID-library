@@ -1,7 +1,6 @@
-import { Resolver } from "did-resolver";
-import { DIFPresentationDefinition } from "../../common/interfaces/presentation_definition.interface";
-import { DIFPresentationSubmission } from "../../common/interfaces/presentation_submission.interface";
-import { CredentialAdditionalVerification, NonceVerification, VpExtractedData } from "./types";
+import { Resolver } from 'did-resolver';
+import { DIFPresentationDefinition, DIFPresentationSubmission } from '../../common/interfaces/index.js';
+import { CredentialAdditionalVerification, NonceAndStateVerification, VpExtractedData } from './types.js';
 /**
  * Component specialized in the verification of verifiable
  * submissions, for which it requires the original definition
@@ -11,7 +10,7 @@ export declare class VpResolver {
     private didResolver;
     private audience;
     private externalValidation;
-    private nonceValidation;
+    private nonceAndStateValidation;
     private vcSignatureVerification;
     private jwtCache;
     private vpHolder;
@@ -22,12 +21,12 @@ export declare class VpResolver {
      * @param externalValidation Callback that will be used to request external
      * verification of any detected VC. This verification should focus on
      * validating issues related to the trust framework and the use case.
-     * @param nonceValidation Callback the nonces specified in any JWT VP
+     * @param nonceAndStateValidation Callback the nonces specified in any JWT VP
      * @param vcSignatureVerification Flag indicating whether the signatures of the VCs
      * included in the VP should be verified. To that regard, the DID Resolver provided must
      * be able to generate the needed DID Documents
      */
-    constructor(didResolver: Resolver, audience: string, externalValidation: CredentialAdditionalVerification, nonceValidation: NonceVerification, vcSignatureVerification?: boolean);
+    constructor(didResolver: Resolver, audience: string, externalValidation: CredentialAdditionalVerification, nonceAndStateValidation: NonceAndStateVerification, vcSignatureVerification?: boolean);
     /**
      * Verify a Verifiable Presentation
      * @param vp Any data structure in which the VP is located

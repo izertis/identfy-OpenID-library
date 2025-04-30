@@ -1,6 +1,6 @@
-import { AuthzResponseType } from "../types/index.js";
-import { AuthorizationDetails } from "./authz_details.interface.js";
-import { HolderMetadata, ServiceMetadata } from "./client_metadata.interface.js";
+import { AuthzResponseType } from '../types/index.js';
+import { AuthorizationDetails } from './authz_details.interface.js';
+import { HolderMetadata, ServiceMetadata } from './client_metadata.interface.js';
 /**
  * Defines an Authorization Request in accordance to
  * RFC 6749 "The OAuth 2.0 Authorization Framework" and

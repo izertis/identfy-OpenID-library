@@ -11,16 +11,17 @@ export class AuthorizationResponse {
   constructor(
     public uri: string,
     public code: string,
-    public state?: string) { }
+    public state?: string,
+  ) {}
 
   /**
    * Allows to express the response in URL format
    * @returns String with response in URL format
    */
   toUri(): string {
-    const params: Record<string, string> = { code: this.code };
+    const params: Record<string, string> = {code: this.code};
     if (this.state) {
-      params.state = this.state
+      params.state = this.state;
     }
     return `${this.uri}?${new URLSearchParams(Object.entries(params)).toString()}`;
   }

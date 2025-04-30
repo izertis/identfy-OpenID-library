@@ -1,5 +1,5 @@
-import { DIDDocument } from "did-resolver";
-import { JWK } from "jose";
+import { DIDDocument } from 'did-resolver';
+import { JWK } from 'jose';
 /**
  * Obtains the Authentification JWK from a DID Document
  * @param didDocument The DID document from which to extract the key

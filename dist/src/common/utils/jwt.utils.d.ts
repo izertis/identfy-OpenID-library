@@ -1,5 +1,5 @@
-import { JWK } from "jose";
-import * as jwt from "jsonwebtoken";
+import { JWK } from 'jose';
+import * as jwt from 'jsonwebtoken';
 /**
  * Deserialize a JWT, which allows to obtain its header, payload and signature
  * @param jsonWebtoken The token to deserialize/decode

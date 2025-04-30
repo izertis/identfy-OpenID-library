@@ -1,12 +1,29 @@
-import { JWK } from "jose";
-import { JWA_ALGS } from "../../common/constants/index.js";
-import { AuthzResponseMode } from "../../common/formats/index.js";
-import { DIFPresentationDefinition } from "../../common/index.js";
-import { AuthorizationDetails } from "../../common/interfaces/authz_details.interface.js";
-import { HolderMetadata } from "../../common/interfaces/client_metadata.interface.js";
-import { VerificationResult, VpFormatsSupported } from "../../common/types/index.js";
-import { DIDDocument } from "did-resolver";
-import { JwtHeader, JwtPayload } from "jsonwebtoken";
+import { JWK } from 'jose';
+import { JWA_ALGS } from '../../common/constants/index.js';
+import { AuthzResponseMode } from '../../common/formats/index.js';
+import { AuthzRequest, DIFPresentationDefinition } from '../../common/index.js';
+import { VpFormatsSupported } from '../../common/types/index.js';
+import { DIDDocument } from 'did-resolver';
+import { VpExtractedData } from '../presentations/types.js';
+import { JwtPayload } from 'jsonwebtoken';
+export interface RpConfiguration {
+    /**
+     * Expiration time(ms) for ID Tokens. @default 10 minutes
+     */
+    idTokenExpirationTime: number;
+    /**
+     * Expiration time(ms) for VP Tokens. @default 10 minutes
+     */
+    vpTokenExpirationTIme: number;
+    /**
+     * Expiration time(s) for Challenge Nonce. @default 1 hour
+     */
+    cNonceExpirationTime: number;
+    /**
+     * Expiration time(s) for access tokens. @default 1 hour
+     */
+    accessTokenExpirationTime: number;
+}
 /**
  * Defines a function type that allows signing a JWT Payload
  * @param payload JWT payload to sign
@@ -16,95 +33,10 @@ import { JwtHeader, JwtPayload } from "jsonwebtoken";
  */
 export type TokenSignCallback = (payload: JwtPayload, supportedSignAlg?: JWA_ALGS[]) => Promise<string>;
 /**
- * Defines a function type that allows the verification of an ID Token
- * @param header JWT Header of the ID Token
- * @param payload JWT payload if the ID Token
- * @param didDocument DID Document of the entity the token relates to
- * @returns Indication of whether the verification was successful
- * accompanied by an optional error message
- */
-export type IdTokenVerifyCallback = (header: JwtHeader, payload: JwtPayload, didDocument: DIDDocument) => Promise<VerificationResult>;
-/**
- * Defines a function type that allows to get the default metadata of clients
- * @returns The metadata of the client
- */
-export type GetClientDefaultMetada = () => Promise<HolderMetadata>;
-/**
- * Defines an object type which allows to specify the optional parameters of
- * VerifyBaseAuthzRequest OpenIDReliyingParyy method
- */
-export type VerifyBaseAuthzRequestOptionalParams = {
-    /**
-     * Function for verifying the authorisation details of an authorisation request
-     * @param authDetails Details to verify
-     * @returns Indication of whether the verification was successful
-     * accompanied by an optional error message
-     */
-    authzDetailsVerifyCallback?: (authDetails: AuthorizationDetails) => Promise<VerificationResult>;
-    /**
-     * Function for verifying the scope of an authorisation request
-     * @param scope The scope of the authz request
-     * @returns Indication of whether the verification was successful
-     * accompanied by an optional error message
-     */
-    scopeVerifyCallback?: (scope: string) => Promise<VerificationResult>;
-    /**
-     * Function for verifying the "issuer_state" parameter of an authorisation request
-     * @param state The state of the issuer sent in a Credential Offer
-     * @returns Indication of whether the verification was successful
-     * accompanied by an optional error message
-     */
-    issuerStateVerifyCallback?: (state: string) => Promise<VerificationResult>;
-};
-/**
- * Defines an object type that allows to specify the optional parameters of
- * "generateAccessToken" OpenIDReliyingParty method
- */
-export interface GenerateAccessTokenOptionalParameters {
-    /**
-     * Allows to verify the authorisation code sent with the token request
-     * @param clientId The identifier of the client
-     * @param code The code itself
-     * @returns Indication of whether the verification was successful
-     * accompanied by an optional error message
-     */
-    authorizeCodeCallback?: (clientId: string, code: string) => Promise<VerificationResult>;
-    /**
-     * Allows to verify the pre-authorised cose sent with the token request
-     * @param clientId The identifier of the client
-     * @param preCode The code itself
-     * @param pin The PIN sent by the client
-     * @returns Indication of whether the verification was successful
-     * accompanied by an optional error message
-     */
-    preAuthorizeCodeCallback?: (clientId: string | undefined, preCode: string, pin?: string) => Promise<{
-        client_id?: string;
-        error?: string;
-    }>;
-    /**
-     * Allows to verify the "code_challenge" parameter sent by an user in
-     * a previous authorisation request
-     * @param clientId The identifier of the client
-     * @param codeVerifier The code_verifier of the previously received challenge
-     * @returns Indication of whether the verification was successful
-     * accompanied by an optional error message
-     */
-    codeVerifierCallback?: (clientId: string, codeVerifier?: string) => Promise<VerificationResult>;
-    /**
-     * Allows to obtain the JWK used by a service client in the Authz phase
-     * @param clientId The identifier of the client
-     * @returns The JWK previously used by that client during the authz phase
-     */
-    retrieveClientAssertionPublicKeys?: (clientId: string) => Promise<JWK>;
-    cNonceToEmploy?: string;
-    cNonceExp?: number;
-    accessTokenExp?: number;
-}
-/**
  * Defines an object type that allows to specify the optional parameters of
  * "createIdTokenRequest" OpenIDReliyingParty method
  */
-export type CreateIdTokenRequestOptionalParams = {
+export type CreateTokenRequestOptionalParams = {
     /**
      * Response mode to specify in the ID Token
      * @defaultValue "direct_post"
@@ -119,11 +51,6 @@ export type CreateIdTokenRequestOptionalParams = {
      */
     state?: string;
     /**
-     * The nonce to indicate in the JWT.
-     * @defaultValue UUID randomly generated
-     */
-    nonce?: string;
-    /**
      * The expiration time of the JWT. Must be in seconds
      * @defaultValue 1 hour
      */
@@ -134,46 +61,87 @@ export type CreateIdTokenRequestOptionalParams = {
     scope?: string;
 };
 /**
- * Defines an object type that allows to specify the optional parameters of
- * "createVpTokenRequest" OpenIDReliyingParty method
+ * Allows to define how to specify the presentation definition in a VP Token Request
  */
-export type CreateVpTokenRequestOptionalParams = {
+export type PresentationDefinitionLocation = {
+    type: 'Raw';
+    presentationDefinition: DIFPresentationDefinition;
+} | {
+    type: 'Uri';
+    presentationDefinitionUri: string;
+};
+/**
+ * Allows to define the purpose behid a specific Authz Request
+ */
+export type RequestPurpose = {
+    type: 'Issuance';
+    verifiedBaseAuthzRequest: VerifiedBaseAuthzRequest;
+} | {
+    type: 'Verification';
+    verifiedBaseAuthzRequest: VerifiedBaseAuthzRequest;
+};
+export interface VerifiedBaseAuthzRequest {
     /**
-   * Response mode to specify in the ID Token
-   * @defaultValue "direct_post"
-   */
-    responseMode?: AuthzResponseMode;
-    /**
-     * Additional payload to include in the JWT
+     * Client metadata related to supported formats and algorithms that are checked against the PR.
      */
-    additionalPayload?: Record<string, any>;
+    validatedClientMetadata: ValidatedClientMetadata;
     /**
-     * The state to indicate in the JWT
+     * Verified authz request
+     */
+    authzRequest: AuthzRequest;
+    /**
+     * JWK used by the service Wallet
+     */
+    serviceWalletJWK?: JWK;
+}
+export interface VerifiedIdTokenResponse {
+    /**
+     * The DID Document of the entity that sign the token
+     */
+    didDocument?: DIDDocument;
+    /**
+     * The subject identifier. In most cases coincide with the ID of the DID Document
+     */
+    subject: string;
+    /**
+     * The verified token
+     */
+    token: string;
+    /**
+     * The authorization code generated
+     */
+    authzCode?: string;
+    /**
+     * The expected state by the holder
      */
     state?: string;
     /**
-     * The nonce to indicate in the JWT.
-     * @defaultValue UUID randomly generated
+     * The URI in which the holder expects to received the Authz code
      */
-    nonce?: string;
+    redirectUri?: string;
+}
+export interface VerifiedVpTokenResponse {
     /**
-     * The expiration time of the JWT. Must be in seconds
-     * @defaultValue 1 hour
+     * The verified token
      */
-    expirationTime?: number;
+    token: string;
     /**
-     * The scope to include in the JWT
+     * The data extracted from the VCs of the VP
      */
-    scope?: string;
+    vpInternalData: VpExtractedData;
     /**
-     * The presentation definition to include in the JWT
+     * The authorization code generated
      */
-    presentation_definition?: DIFPresentationDefinition;
+    authzCode?: string;
     /**
-     * The URI in which the presentation definition can be retrieved
+     * The expected state by the holder
      */
-    presentation_definition_uri?: string;
-};
+    state?: string;
+    /**
+     * The URI in which the holder expects to received the Authz code
+     */
+    redirectUri?: string;
+}
 /**
  * Client metadata that has been processed to indicate which formats, signature
  * algorithms and response types are supported.

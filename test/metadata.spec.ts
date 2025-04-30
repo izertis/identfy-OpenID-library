@@ -1,9 +1,9 @@
-import { expect } from "chai";
-import { IssuerMetadataBuilder } from "../src/index.js";
+import { IssuerMetadataBuilder } from "@/common/builders/index.js";
+import { expect, test, describe } from '@jest/globals';
 
 describe("Issuer Metadata", () => {
-  context("With impose https flag", () => {
-    it("Should create the Auth Metadata Object", () => {
+  describe("With impose https flag", () => {
+    test("Should create the Auth Metadata Object", () => {
       expect(
         () => {
           new IssuerMetadataBuilder(
@@ -12,9 +12,9 @@ describe("Issuer Metadata", () => {
             true
           );
         }
-      ).to.not.throw();
+      ).not.toThrow();
     });
-    it("Should not allow use http url", () => {
+    test("Should not allow use http url", () => {
       expect(
         () => {
           new IssuerMetadataBuilder(
@@ -23,12 +23,12 @@ describe("Issuer Metadata", () => {
             true
           ).withAuthorizationServer("http://auth");
         }
-      ).to.throw();
+      ).toThrow();
     });
   });
 
-  context("Without impose https flag", () => {
-    it("Should create the Auth Metadata Object", () => {
+  describe("Without impose https flag", () => {
+    test("Should create the Auth Metadata Object", () => {
       expect(
         () => {
           new IssuerMetadataBuilder(
@@ -37,9 +37,9 @@ describe("Issuer Metadata", () => {
             false
           );
         }
-      ).to.not.throw();
+      ).not.toThrow();
     });
-    it("Should allow use http url", () => {
+    test("Should allow use http url", () => {
       expect(
         () => {
           new IssuerMetadataBuilder(
@@ -48,7 +48,7 @@ describe("Issuer Metadata", () => {
             false
           ).withAuthorizationServer("http://auth");
         }
-      ).to.not.throw();
+      ).not.toThrow();
     });
   });
 });

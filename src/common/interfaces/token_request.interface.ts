@@ -1,5 +1,5 @@
-import { ClientAssertionTypes } from "../formats/index.js";
-import { GrantType } from "../types/index.js";
+import {ClientAssertionTypes} from '../formats/index.js';
+import {GrantType} from '../types/index.js';
 
 /**
  * Defines an Access Token Request in accordance to
@@ -10,9 +10,9 @@ export interface TokenRequest {
   client_id: string;
   code?: string;
   code_verifier?: string;
-  "pre-authorized_code"?: string;
+  'pre-authorized_code'?: string;
   user_pin?: string;
   vp_token?: string;
   client_assertion?: string;
-  client_assertion_type?: ClientAssertionTypes
+  client_assertion_type?: ClientAssertionTypes;
 }

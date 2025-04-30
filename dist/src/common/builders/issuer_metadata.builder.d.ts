@@ -1,4 +1,4 @@
-import { W3CVerifiableCredentialFormats } from "../formats/index.js";
+import { W3CVerifiableCredentialFormats } from '../formats/index.js';
 import { CredentialSupported, IssuerMetadata, VerifiableCredentialDisplay } from '../interfaces/issuer_metadata.interface.js';
 /**
  * Builder class for Credential Issuer Metadata

@@ -1,4 +1,4 @@
-import { AuthzResponseMode } from "../formats/index.js";
+import { AuthzResponseMode } from '../formats/index.js';
 /**
  * Define an authorisation request that expects an ID token as "response_type"
  */
@@ -23,7 +23,7 @@ export declare class IdTokenRequest {
  * Parameters of a ID Token Request
  */
 export interface IdTokenRequestParams {
-    response_type: "id_token";
+    response_type: 'id_token';
     client_id: string;
     scope: string;
     redirect_uri: string;

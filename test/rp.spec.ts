@@ -1,5 +1,3 @@
-import { assert, expect } from "chai";
-import { OpenIDReliyingParty } from "../src/core/rp/index.js";
 import {
   AuthzDetailsBuilder,
   AuthzRequestBuilder,
@@ -8,7 +6,6 @@ import {
   IdTokenResponse,
   JWA_ALGS,
   TokenRequest,
-  alwaysAcceptVerification,
   decodeToken,
   generateChallenge,
   generateDefaultAuthorisationServerMetadata
@@ -17,7 +14,10 @@ import { getResolver } from "@cef-ebsi/key-did-resolver";
 import { Resolver } from "did-resolver";
 import { SignJWT, importJWK } from "jose";
 import { JwtPayload } from "jsonwebtoken";
-import { verifyChallenge } from "pkce-challenge";
+import { OpenIdRPStepBuilder } from "@/core/rp/builder.js";
+import { MemoryStateManager } from "@/core/state/index.js";
+import { Result } from "@/classes";
+import { expect, test, describe } from '@jest/globals';
 
 const holderJWK = {
   "kty": "EC",
@@ -48,40 +48,63 @@ const authServerDid = "did:key:z2dmzD81cgPx8Vki7JbuuMmFYrWPgYoytykUZ3eyqht1j9Kbr
 const authServerKid = "z2dmzD81cgPx8Vki7JbuuMmFYrWPgYoytykUZ3eyqht1j9KbrmHVD1QbodChiJ88ePBkcBQubkha4sN8L1471yQwkLXYR4K9WroVupKaGN2jssXaeCn4vxRV9xjMtWHe4RSx9GJS1XCcdfQ3VJfX5iJ1iUSx1jKd5qT7gUvF9J1P11tEYk";
 const authServerUrl = "https://issuer";
 
-describe("Reliying Party tests", async () => {
-  const rp = new OpenIDReliyingParty(
-    async () => {
-      return {
-        "authorization_endpoint": "openid:",
-        "response_types_supported": ["vp_token", "id_token"],
-        "vp_formats_supported": {
-          "jwt_vp": {
-            "alg_values_supported": ["ES256"]
-          },
-          "jwt_vc": {
-            "alg_values_supported": ["ES256"]
-          }
-        },
-        "scopes_supported": ["openid"],
-        "subject_types_supported": ["public"],
-        "id_token_signing_alg_values_supported": ["ES256"],
-        "request_object_signing_alg_values_supported": ["ES256"],
-        "subject_syntax_types_supported": [
-          "urn:ietf:params:oauth:jwk-thumbprint",
-          "did:key:jwk_jcs-pub"
-        ],
-        "id_token_types_supported": ["subject_signed_id_token"]
-      }
-    },
+const signCallback = async (payload: JwtPayload, _supportedAlgs?: JWA_ALGS[]) => {
+  const header = {
+    alg: "ES256",
+    kid: `${authServerDid}#${authServerKid}`
+  };
+  const keyLike = await importJWK(authServerJWK);
+  return await new SignJWT(payload)
+    .setProtectedHeader(header)
+    .setIssuedAt()
+    .sign(keyLike);
+};
+
+describe("Reliying Party tests", () => {
+  const rp = new OpenIdRPStepBuilder(
     {
       ...generateDefaultAuthorisationServerMetadata("https://issuer"),
-      grant_types_supported: ["authorization_code", "urn:ietf:params:oauth:grant-type:pre-authorized_code"]
-    },
-    new Resolver(getResolver()),
-    alwaysAcceptVerification
-  );
-  context("authorization_code response type with ID Token", async () => {
-    it("It should successfully emit an AccessToken", async () => {
+      grant_types_supported: [
+        "urn:ietf:params:oauth:grant-type:pre-authorized_code",
+        "authorization_code"
+      ]
+    }
+  )
+    .withPreAuthCallback(async (clientId, preCode, pin) => {
+      if (preCode !== "123" || pin !== "444") {
+        return Result.Err(new Error("Invalid"));
+      }
+      return Result.Ok(holderDid);
+    })
+    .setDefaultHolderMetadata({
+      "authorization_endpoint": "openid:",
+      "response_types_supported": ["vp_token", "id_token"],
+      "vp_formats_supported": {
+        "jwt_vp": {
+          "alg_values_supported": ["ES256"]
+        },
+        "jwt_vc": {
+          "alg_values_supported": ["ES256"]
+        }
+      },
+      "scopes_supported": ["openid"],
+      "subject_types_supported": ["public"],
+      "id_token_signing_alg_values_supported": ["ES256"],
+      "request_object_signing_alg_values_supported": ["ES256"],
+      "subject_syntax_types_supported": [
+        "urn:ietf:params:oauth:jwk-thumbprint",
+        "did:key:jwk_jcs-pub"
+      ],
+      "id_token_types_supported": ["subject_signed_id_token"]
+    })
+    .withDidResolver(new Resolver(getResolver()))
+    .withTokenSignCallback((payload, algs) => {
+      return signCallback(payload, algs);
+    })
+    .withStateManager(new MemoryStateManager())
+    .build();
+  describe("authorization_code response type with ID Token", () => {
+    test("It should successfully emit an AccessToken", async () => {
       expect(async () => {
         const codeVerifier = "test";
         // Generate AuthzRequest
@@ -101,74 +124,168 @@ describe("Reliying Party tests", async () => {
         // Verify AuthzRequest
         let verifiedAuthzRequest = await rp.verifyBaseAuthzRequest(
           authzRequest,
-          {
-            authzDetailsVerifyCallback: async (details) => {
-              if (details.types && !details.types.includes("TestVc")) {
-                return { valid: false, error: "Unssuported VC Type" };
-              }
-              return { valid: true };
-            }
-          }
         );
         // Create ID Token Request
         const idTokenRequest = await rp.createIdTokenRequest(
           verifiedAuthzRequest.authzRequest.client_metadata?.authorization_endpoint!,
           verifiedAuthzRequest.authzRequest.client_id,
           authServerUrl + "/direct_post",
-          signCallback
+          {
+            type: "Issuance",
+            verifiedBaseAuthzRequest: verifiedAuthzRequest,
+          }
         );
         // Create ID Token Response
         const idTokenResponse = await generateIdToken(idTokenRequest);
         // Verify ID Token Response
-        const _verifiedIdTokenResponse = await rp.verifyIdTokenResponse(
+        const verifiedIdTokenResponse = await rp.verifyIdTokenResponse(
           idTokenResponse,
-          async (_header, payload, didDocument) => {
-            if (!payload.nonce || payload.nonce !== idTokenRequest.requestParams.nonce!) {
-              return { valid: false, error: "Invalid nonce" };
-            }
-            if (didDocument.id !== holderDid) {
-              return { valid: false, error: "Unkown client id" }
-            }
-            return { valid: true }
-          }
-        );
-        // Create Authz Response
-        const authzResponse = rp.createAuthzResponse(
-          authzRequest.redirect_uri,
-          "1453",
-          authzRequest.state
         );
         // Create Token Request
         const tokenRequest: TokenRequest = {
           grant_type: "authorization_code",
           client_id: holderDid,
           code_verifier: codeVerifier,
-          code: authzResponse.code
+          code: verifiedIdTokenResponse.authzCode
         };
         // Create Token Response
         const _tokenResponse = await rp.generateAccessToken(
           tokenRequest,
           false,
-          signCallback,
+          // signCallback,
           authServerUrl,
-          {
-            authorizeCodeCallback: async (_clientId, code) => {
-              if (code === "1453") {
-                return { valid: true };
-              }
-              return { valid: false, error: "Invalid authz code" };
+          authServerJWK
+        );
+      }).not.toThrow();
+    });
+    test("Should detect Authz with incorrect details", async () => {
+      const newRp = new OpenIdRPStepBuilder(
+        generateDefaultAuthorisationServerMetadata("https://issuer")
+      )
+        .withAuthzDetailsVerification(async (details) => Result.Err(new Error("Invalid")))
+        .setDefaultHolderMetadata({
+          "authorization_endpoint": "openid:",
+          "response_types_supported": ["vp_token", "id_token"],
+          "vp_formats_supported": {
+            "jwt_vp": {
+              "alg_values_supported": ["ES256"]
             },
-            codeVerifierCallback: async (_clientId, codeVerifier) => {
-              if (!codeVerifier || !await verifyChallenge(codeVerifier, authzRequest.code_challenge!)) {
-                return { valid: false, error: "Invalid code_verifier" };
-              }
-              return { valid: true }
+            "jwt_vc": {
+              "alg_values_supported": ["ES256"]
+            }
+          },
+          "scopes_supported": ["openid"],
+          "subject_types_supported": ["public"],
+          "id_token_signing_alg_values_supported": ["ES256"],
+          "request_object_signing_alg_values_supported": ["ES256"],
+          "subject_syntax_types_supported": [
+            "urn:ietf:params:oauth:jwk-thumbprint",
+            "did:key:jwk_jcs-pub"
+          ],
+          "id_token_types_supported": ["subject_signed_id_token"]
+        })
+        .withDidResolver(new Resolver(getResolver()))
+        .withTokenSignCallback(signCallback)
+        .withStateManager(new MemoryStateManager())
+        .build();
+      const authzRequest = AuthzRequestBuilder.holderAuthzRequestBuilder(
+        "code",
+        holderDid,
+        "openid:",
+        {},
+        await generateChallenge("test"),
+        "ES256"
+      ).addAuthzDetails(
+        AuthzDetailsBuilder.openIdCredentialBuilder("jwt_vc_json")
+          .withTypes(
+            ["TestVc"]
+          ).build()
+      ).build();
+      // Verify AuthzRequest
+      await expect(newRp.verifyBaseAuthzRequest(
+        authzRequest,
+      )).rejects.toThrow();
+    });
+    test("Should detect Authz with incorrect scope", async () => {
+      const newRp = new OpenIdRPStepBuilder(
+        generateDefaultAuthorisationServerMetadata("https://issuer")
+      )
+        .withScopeVerification()
+        .setDefaultHolderMetadata({
+          "authorization_endpoint": "openid:",
+          "response_types_supported": ["vp_token", "id_token"],
+          "vp_formats_supported": {
+            "jwt_vp": {
+              "alg_values_supported": ["ES256"]
             },
-          }
-        );
-      }).to.not.throw();
+            "jwt_vc": {
+              "alg_values_supported": ["ES256"]
+            }
+          },
+          "scopes_supported": ["openid"],
+          "subject_types_supported": ["public"],
+          "id_token_signing_alg_values_supported": ["ES256"],
+          "request_object_signing_alg_values_supported": ["ES256"],
+          "subject_syntax_types_supported": [
+            "urn:ietf:params:oauth:jwk-thumbprint",
+            "did:key:jwk_jcs-pub"
+          ],
+          "id_token_types_supported": ["subject_signed_id_token"]
+        })
+        .withDidResolver(new Resolver(getResolver()))
+        .withTokenSignCallback(signCallback)
+        .withStateManager(new MemoryStateManager())
+        .build();
+      const authzRequest = AuthzRequestBuilder.holderAuthzRequestBuilder(
+        "code",
+        holderDid,
+        "openid22:",
+        {},
+        await generateChallenge("test"),
+        "ES256"
+      ).addAuthzDetails(
+        AuthzDetailsBuilder.openIdCredentialBuilder("jwt_vc_json")
+          .withTypes(
+            ["TestVc"]
+          ).build()
+      )
+      .withScope("openid invalid_scope")
+      .build();
+      // Verify AuthzRequest
+      await expect(newRp.verifyBaseAuthzRequest(
+        authzRequest,
+      )).rejects.toThrow()
     });
-    it("Should detect Authz with incorrect details", async () => {
+    test("Should reject Authz request with no issuer_state", async () => {
+      const newRp = new OpenIdRPStepBuilder(
+        generateDefaultAuthorisationServerMetadata("https://issuer")
+      )
+        .withIssuerStateVerification(async (state) => Result.Ok(null))
+        .setDefaultHolderMetadata({
+          "authorization_endpoint": "openid:",
+          "response_types_supported": ["vp_token", "id_token"],
+          "vp_formats_supported": {
+            "jwt_vp": {
+              "alg_values_supported": ["ES256"]
+            },
+            "jwt_vc": {
+              "alg_values_supported": ["ES256"]
+            }
+          },
+          "scopes_supported": ["openid"],
+          "subject_types_supported": ["public"],
+          "id_token_signing_alg_values_supported": ["ES256"],
+          "request_object_signing_alg_values_supported": ["ES256"],
+          "subject_syntax_types_supported": [
+            "urn:ietf:params:oauth:jwk-thumbprint",
+            "did:key:jwk_jcs-pub"
+          ],
+          "id_token_types_supported": ["subject_signed_id_token"]
+        })
+        .withDidResolver(new Resolver(getResolver()))
+        .withTokenSignCallback(signCallback)
+        .withStateManager(new MemoryStateManager())
+        .build();
       const authzRequest = AuthzRequestBuilder.holderAuthzRequestBuilder(
         "code",
         holderDid,
@@ -183,73 +300,11 @@ describe("Reliying Party tests", async () => {
           ).build()
       ).build();
       // Verify AuthzRequest
-      try {
-        await rp.verifyBaseAuthzRequest(
-          authzRequest,
-          {
-            authzDetailsVerifyCallback: async (_details) => {
-              return { valid: false };
-            }
-          }
-        );
-        assert.fail("Should have thrown");
-      } catch (_error: any) { }
+      await expect(newRp.verifyBaseAuthzRequest(
+        authzRequest,
+      )).rejects.toThrow();
     });
-    it("Should detect Authz with incorrect scope", async () => {
-      const authzRequest = AuthzRequestBuilder.holderAuthzRequestBuilder(
-        "code",
-        holderDid,
-        "openid:",
-        {},
-        await generateChallenge("test"),
-        "ES256"
-      ).addAuthzDetails(
-        AuthzDetailsBuilder.openIdCredentialBuilder("jwt_vc_json")
-          .withTypes(
-            ["TestVc"]
-          ).build()
-      ).build();
-      // Verify AuthzRequest
-      try {
-        await rp.verifyBaseAuthzRequest(
-          authzRequest,
-          {
-            scopeVerifyCallback: async (_scope) => {
-              return { valid: false };
-            }
-          }
-        );
-        assert.fail("Should have thrown");
-      } catch (_error: any) { }
-    });
-    it("Should reject Authz request with no issuer_state", async () => {
-      const authzRequest = AuthzRequestBuilder.holderAuthzRequestBuilder(
-        "code",
-        holderDid,
-        "openid:",
-        {},
-        await generateChallenge("test"),
-        "ES256"
-      ).addAuthzDetails(
-        AuthzDetailsBuilder.openIdCredentialBuilder("jwt_vc_json")
-          .withTypes(
-            ["TestVc"]
-          ).build()
-      ).build();
-      // Verify AuthzRequest
-      try {
-        await rp.verifyBaseAuthzRequest(
-          authzRequest,
-          {
-            issuerStateVerifyCallback: async (_scope) => {
-              return { valid: true };
-            }
-          }
-        );
-        assert.fail("Should have thrown");
-      } catch (_error: any) { }
-    });
-    it("Should reject ID Token with incorrect signature", async () => {
+    test("Should reject ID Token with incorrect signature", async () => {
       const header = {
         alg: "ES256",
         kid: `${holderDid}#${holderKid}`
@@ -264,22 +319,13 @@ describe("Reliying Party tests", async () => {
         .sign(keyLike);
       const { signature } = decodeToken(idToken);
       const jwt = "eyaaaaaaaa.aaaaaaaaa." + signature;
-      try {
-        await rp.verifyIdTokenResponse(
-          {
-            id_token: jwt
-          },
-          async (_header, _payload, didDocument) => {
-            if (didDocument.id !== holderDid) {
-              return { valid: false, error: "Unkown client id" }
-            }
-            return { valid: true }
-          }
-        );
-        assert.fail("Should have thrown");
-      } catch (_error: any) { }
+      await expect(rp.verifyIdTokenResponse(
+        {
+          id_token: jwt
+        },
+      )).rejects.toThrow();
     });
-    it("Should reject ID Token with incorrect kid", async () => {
+    test("Should reject ID Token with incorrect kid", async () => {
       const header = {
         alg: "ES256",
         kid: "kid"
@@ -292,22 +338,13 @@ describe("Reliying Party tests", async () => {
         .setSubject(holderDid)
         .setExpirationTime("15m")
         .sign(keyLike);
-      try {
-        await rp.verifyIdTokenResponse(
-          {
-            id_token: idToken
-          },
-          async (_header, _payload, didDocument) => {
-            if (didDocument.id !== holderDid) {
-              return { valid: false, error: "Unkown client id" }
-            }
-            return { valid: true }
-          }
-        );
-        assert.fail("Should have thrown");
-      } catch (_error: any) { }
+      await expect(rp.verifyIdTokenResponse(
+        {
+          id_token: idToken
+        },
+      )).rejects.toThrow();
     });
-    it("Should reject ID Token with unsupported DID Method", async () => {
+    test("Should reject ID Token with unsupported DID Method", async () => {
       const header = {
         alg: "ES256",
         kid: `${holderDid}#${holderKid}`
@@ -320,94 +357,130 @@ describe("Reliying Party tests", async () => {
         .setSubject(holderDid)
         .setExpirationTime("15m")
         .sign(keyLike);
-      try {
-        await rp.verifyIdTokenResponse(
-          {
-            id_token: idToken
-          },
-          async (_header, _payload, didDocument) => {
-            if (didDocument.id !== holderDid) {
-              return { valid: false, error: "Unkown client id" }
-            }
-            return { valid: true }
-          }
-        );
-        assert.fail("Should have thrown");
-      } catch (_error: any) { }
+      await expect(rp.verifyIdTokenResponse(
+        {
+          id_token: idToken
+        },
+      )).rejects.toThrow();
     });
-    it("Should reject Token Request with unssuported Grant", async () => {
+    test("Should reject Token Request with unssuported Grant", async () => {
       // Create Token Request
       const tokenRequest: TokenRequest = {
         grant_type: "vp_token",
         client_id: holderDid
       };
-      try {
-        // Create Token Response
-        await rp.generateAccessToken(
-          tokenRequest,
-          false,
-          signCallback,
-          authServerUrl,
-        );
-        assert.fail("Should have thrown");
-      } catch (_error: any) { }
+      await expect(rp.generateAccessToken(
+        tokenRequest,
+        false,
+        // signCallback,
+        authServerUrl,
+        authServerJWK
+      )).rejects.toThrow();
     });
-    it("Should reject Token Request with invalid authz code", async () => {
-      // Create Token Request
-      const tokenRequest: TokenRequest = {
-        grant_type: "vp_token",
-        client_id: holderDid,
-        code_verifier: "test",
-        code: "123"
-      };
-      try {
-        // Create Token Response
-        await rp.generateAccessToken(
-          tokenRequest,
-          false,
-          signCallback,
-          authServerUrl,
+    test("Should reject Token Request with invalid authz code", async () => {
+        const codeVerifier = "test";
+        // Generate AuthzRequest
+        const authzRequest = AuthzRequestBuilder.holderAuthzRequestBuilder(
+          "code",
+          holderDid,
+          "openid:",
+          {},
+          await generateChallenge(codeVerifier),
+          "ES256"
+        ).addAuthzDetails(
+          AuthzDetailsBuilder.openIdCredentialBuilder("jwt_vc_json")
+            .withTypes(
+              ["TestVc"]
+            ).build()
+        ).build();
+        let verifiedAuthzRequest = await rp.verifyBaseAuthzRequest(
+          authzRequest,
+        );
+        // Create ID Token Request
+        const idTokenRequest = await rp.createIdTokenRequest(
+          verifiedAuthzRequest.authzRequest.client_metadata?.authorization_endpoint!,
+          verifiedAuthzRequest.authzRequest.client_id,
+          authServerUrl + "/direct_post",
           {
-            codeVerifierCallback: async (_id, _codeVerifier) => {
-              return { valid: true };
-            },
-            authorizeCodeCallback: async (_id, code) => {
-              return { valid: false };
-            }
+            type: "Issuance",
+            verifiedBaseAuthzRequest: verifiedAuthzRequest,
           }
         );
-        assert.fail("Should have thrown");
-      } catch (_error: any) { }
-    });
-    it("Should reject Token Request with invalid cove_verifier", async () => {
-      // Create Token Request
-      const tokenRequest: TokenRequest = {
-        grant_type: "vp_token",
-        client_id: holderDid,
-        code_verifier: "test",
-        code: "123"
-      };
-      try {
+        // Create ID Token Response
+        const idTokenResponse = await generateIdToken(idTokenRequest);
+        // Verify ID Token Response
+        const verifiedIdTokenResponse = await rp.verifyIdTokenResponse(
+          idTokenResponse,
+        );
+        // Create Token Request
+        const tokenRequest: TokenRequest = {
+          grant_type: "authorization_code",
+          client_id: holderDid,
+          code_verifier: codeVerifier,
+          code: "invalid token"
+        };
         // Create Token Response
-        await rp.generateAccessToken(
+        await expect(rp.generateAccessToken(
           tokenRequest,
           false,
-          signCallback,
+          // signCallback,
           authServerUrl,
+          authServerJWK
+        )).rejects.toThrow();
+    });
+    test("Should reject Token Request with invalid code_verifier", async () => {
+        const codeVerifier = "INVALID";
+        // Generate AuthzRequest
+        const authzRequest = AuthzRequestBuilder.holderAuthzRequestBuilder(
+          "code",
+          holderDid,
+          "openid:",
+          {},
+          await generateChallenge("test"),
+          "ES256"
+        ).addAuthzDetails(
+          AuthzDetailsBuilder.openIdCredentialBuilder("jwt_vc_json")
+            .withTypes(
+              ["TestVc"]
+            ).build()
+        ).build();
+        // Verify AuthzRequest
+        let verifiedAuthzRequest = await rp.verifyBaseAuthzRequest(
+          authzRequest,
+        );
+        // Create ID Token Request
+        const idTokenRequest = await rp.createIdTokenRequest(
+          verifiedAuthzRequest.authzRequest.client_metadata?.authorization_endpoint!,
+          verifiedAuthzRequest.authzRequest.client_id,
+          authServerUrl + "/direct_post",
           {
-            codeVerifierCallback: async (_id, _codeVerifier) => {
-              return { valid: false };
-            },
-            authorizeCodeCallback: async (_id, code) => {
-              return { valid: true };
-            }
+            type: "Issuance",
+            verifiedBaseAuthzRequest: verifiedAuthzRequest,
           }
         );
-        assert.fail("Should have thrown");
-      } catch (_error: any) { }
+        // Create ID Token Response
+        const idTokenResponse = await generateIdToken(idTokenRequest);
+        // Verify ID Token Response
+        const verifiedIdTokenResponse = await rp.verifyIdTokenResponse(
+          idTokenResponse,
+        );
+        // Create Token Request
+        const tokenRequest: TokenRequest = {
+          grant_type: "authorization_code",
+          client_id: holderDid,
+          code_verifier: codeVerifier,
+          code: verifiedIdTokenResponse.authzCode
+        };
+        // Create Token Response
+        await expect(rp.generateAccessToken(
+          tokenRequest,
+          false,
+          authServerUrl,
+          authServerJWK
+        )).rejects.toThrow();
     });
   });
-  it("Access Token generation with pre-auth code", async () => {
+  test("Access Token generation with pre-auth code", async () => {
     const credentialOffer = new CredentialOfferBuilder(authServerUrl)
       .withPreAuthGrant(true, "123")
       .addCredential({
@@ -422,24 +495,13 @@ describe("Reliying Party tests", async () => {
       "pre-authorized_code": credentialOffer.grants?.["urn:ietf:params:oauth:grant-type:pre-authorized_code"]?.["pre-authorized_code"],
       user_pin: "444"
     };
-    try {
-      await rp.generateAccessToken(
-        tokenRequest,
-        false,
-        signCallback,
-        authServerUrl,
-        {
-          preAuthorizeCodeCallback: async (_clientId, code, pin) => {
-            if (code !== "123" || pin !== "444") {
-              return { error: "Invalid pre-auth" };
-            }
-            return { client_id: holderDid };
-          }
-        }
-      );
-    } catch (_error: any) {
-      assert.fail("AccessToken with preAuth thrown an unexpected exception");
-    }
+    await expect(rp.generateAccessToken(
+      tokenRequest,
+      false,
+      // signCallback,
+      authServerUrl,
+      authServerJWK
+    )).resolves.not.toThrow();
   });
 });
 
@@ -461,15 +523,3 @@ async function generateIdToken(idRequest: IdTokenRequest): Promise<IdTokenRespon
     id_token: idToken
   }
 }
-
-const signCallback = async (payload: JwtPayload, _supportedAlgs?: JWA_ALGS[]) => {
-  const header = {
-    alg: "ES256",
-    kid: `${authServerDid}#${authServerKid}`
-  };
-  const keyLike = await importJWK(authServerJWK);
-  return await new SignJWT(payload)
-    .setProtectedHeader(header)
-    .setIssuedAt()
-    .sign(keyLike);
-};

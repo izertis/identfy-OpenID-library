@@ -1,4 +1,4 @@
-import { AuthServerMetadata } from "../interfaces/auth_server_metadata.interface.js";
+import { AuthServerMetadata } from '../interfaces/auth_server_metadata.interface.js';
 /**
  * Generate a default metadata configuration for a Issuer according to EBSI
  * @param issuer The issuer identifier. It should be an URI

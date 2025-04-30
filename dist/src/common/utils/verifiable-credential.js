@@ -1,4 +1,4 @@
-import jsonpath from "jsonpath";
+import jsonpath from 'jsonpath';
 /**
  * Allows to obtain data from a VC given a JSON PATH
  * @param vc The VC from which obtain the data
@@ -12,3 +12,4 @@ export function extractFromCredential(vc, path) {
     }
     return undefined;
 }
+//# sourceMappingURL=verifiable-credential.js.map

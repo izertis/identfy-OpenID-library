@@ -6,3 +6,4 @@ export var W3CDataModel;
     W3CDataModel[W3CDataModel["V1"] = 0] = "V1";
     W3CDataModel[W3CDataModel["V2"] = 1] = "V2";
 })(W3CDataModel || (W3CDataModel = {}));
+//# sourceMappingURL=index.js.map

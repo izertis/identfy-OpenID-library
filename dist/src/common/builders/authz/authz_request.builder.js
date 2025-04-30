@@ -1,9 +1,21 @@
-import { InvalidDataProvided } from "../../classes/index.js";
-import { DEFAULT_SCOPE } from "../../constants/index.js";
+import { InvalidDataProvided } from '../../classes/index.js';
+import { DEFAULT_SCOPE } from '../../constants/index.js';
 /**
  * Builder class for AuthzRequest
  */
 export class AuthzRequestBuilder {
+    response_type;
+    client_id;
+    redirect_uri;
+    imposeOpenIdScope;
+    scope = DEFAULT_SCOPE;
+    issuer_state;
+    state;
+    authorization_details;
+    nonce;
+    code_challenge;
+    code_challenge_method;
+    client_metadata;
     /**
      * Constructor for AuthzRequestBuilder
      * @param response_type The "reponse_type" attribute of an authorization request
@@ -17,7 +29,6 @@ export class AuthzRequestBuilder {
         this.client_id = client_id;
         this.redirect_uri = redirect_uri;
         this.imposeOpenIdScope = imposeOpenIdScope;
-        this.scope = DEFAULT_SCOPE;
     }
     /**
      * Generates a build with the required data for a AuthzRequest sent
@@ -32,7 +43,8 @@ export class AuthzRequestBuilder {
      * @param issuer_state The "issuer_state" attribute of authorization request
      * @returns Instance of AuthzRequestBuilder
      */
-    static holderAuthzRequestBuilder(response_type, client_id, redirect_uri, metadata, code_challenge, code_challenge_method, issuer_state) {
+    static holderAuthzRequestBuilder(response_type, client_id, redirect_uri, metadata, code_challenge, code_challenge_method, // TODO: Define new type
+    issuer_state) {
         const builder = new AuthzRequestBuilder(response_type, client_id, redirect_uri)
             .withMetadata(metadata)
             .withCodeChallenge(code_challenge, code_challenge_method);
@@ -52,8 +64,7 @@ export class AuthzRequestBuilder {
      * @returns Instance of AuthzRequestBuilder
      */
     static serviceAuthzRequestBuilder(response_type, client_id, redirect_uri, metadata, issuer_state) {
-        const builder = new AuthzRequestBuilder(response_type, client_id, redirect_uri)
-            .withMetadata(metadata);
+        const builder = new AuthzRequestBuilder(response_type, client_id, redirect_uri).withMetadata(metadata);
         if (issuer_state) {
             builder.withIssuerState(issuer_state);
         }
@@ -146,7 +157,8 @@ export class AuthzRequestBuilder {
             nonce: this.nonce,
             code_challenge: this.code_challenge,
             code_challenge_method: this.code_challenge_method,
-            client_metadata: this.client_metadata
+            client_metadata: this.client_metadata,
         };
     }
 }
+//# sourceMappingURL=authz_request.builder.js.map

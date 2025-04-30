@@ -1,4 +1,4 @@
-import { AuthzResponseMode } from "../formats/index.js";
+import {AuthzResponseMode} from '../formats/index.js';
 
 /**
  * Define an authorisation request that expects an ID token as "response_type"
@@ -8,13 +8,13 @@ export class IdTokenRequest {
    * Constructor of the class
    * @param requestParams ID Token request parameters
    * @param request The request as a JWT
-   * @param clientAuthorizationEndpoint 
+   * @param clientAuthorizationEndpoint
    */
   constructor(
     public requestParams: IdTokenRequestParams,
     public request: string,
-    private clientAuthorizationEndpoint: string
-  ) { }
+    private clientAuthorizationEndpoint: string,
+  ) {}
 
   /**
    * Encode the request in URL format
@@ -24,8 +24,8 @@ export class IdTokenRequest {
     return `${this.clientAuthorizationEndpoint}?${new URLSearchParams(
       Object.entries({
         ...this.requestParams,
-        request: this.request
-      })
+        request: this.request,
+      }),
     ).toString()}`;
   }
 }
@@ -34,7 +34,7 @@ export class IdTokenRequest {
  * Parameters of a ID Token Request
  */
 export interface IdTokenRequestParams {
-  response_type: "id_token";
+  response_type: 'id_token';
   client_id: string;
   scope: string;
   redirect_uri: string;

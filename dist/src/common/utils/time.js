@@ -6,3 +6,4 @@
 export function expressDateInSeconds(date) {
     return Math.floor(Date.parse(date) / 1000);
 }
+//# sourceMappingURL=time.js.map

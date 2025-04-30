@@ -1,6 +1,8 @@
 <p align="center">
     <picture>
-      <img alt="identfy" src="./img/header-identfy.jpg" style="max-width: 100%;">
+      <source media="(prefers-color-scheme: dark)" srcset="./img/identfy-logo-dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="./img/identfy-logo-light.svg">
+      <img alt="identfy" src="./img/identfy.png" width="350" style="max-width: 100%;">
     </picture>
 </p>
 
@@ -16,79 +18,116 @@
 
 ## Build
 
-For the use of the library only Node with a version equal or higher than 16 is required.
+For the use of the library only Node with a version equal or higher than 22 is required.
 
 ### Test execution
 
-The library comes with a battery of tests written with Mocha and Chai. To run them you will have to install the corresponding dependencies and transpile the TS code to JS with `npm run build`. Then you can run the tests with `npm run test`. It is also possible to do both steps with the same command `npm run build_and_test`.
-
+The library comes with a battery of tests written with Jest. To run them you will have to install the corresponding dependencies and run the tests with `npm run test`.
 
 ## Overview of the code
 
 ### Capabilities
-- Creation of authorization requests with different `response_type` (code and id_token).
+- Creation of authorization requests with different `response_type` (code, id_token and vp_token).
 - Validation of authorization requests.
 - Issuance of access tokens
   - Support for `grant_type` "authorization_code".
   - Support for `grant_type` "pre-authorize_code".
-- Issuance of W3C credentials for version 1 and 2 of the data model.
+- Issuance of W3C credentials for version 1 and 2 of the data model (OID4VCI Draft 11).
   - Verification of DIDs for control proofs.
   - Support for in-time flow.
   - Support for deferred flow.
+- Verification of W3C Credentials (OID4VP Draft 14).
 
 ### State management
 
-The library does not manage any state, nor does it present any abstract interface or other elements that allow it to manage state indirectly. Instead, the user must provide the functionality related to state management by providing callbacks where appropriate.
+The library requires a StateManager interface implementation to handle the protocol-derived state. This interface simulates a key-value store, but the actual implementation is left to the user. A basic in-memory version is included for testing, but it's not suitable for production.
+
+State tracking is essential, as protocol operations must follow a strict order. For example, an ID Token cannot be verified unless it was previously requested.
 
 ### Algorithms and object signature
 
 The library does not implement or support any cryptographic algorithms. Instead, this responsibility is left to the user. Consequently, the user is given the freedom to choose the solution that best suits the needs of the use case.
 
 ### Builders
-The library defines multiple builders that can be used to generate authorization requests, `credential offers`, authorization details and also the metadata of a credential issuer.
+The library defines multiple builders that can be used to generate authorization requests, `credential offers`, authorization details and also the metadata of a credential issuer. There is also a step builder that can be used to create an instance of the RP.
 
 ### Relying Party
 
-To manage the OpenID process for issuers or any other entity interested in authorization/authentication, the ***OpenIDReliyingParty*** class is defined. For its construction, the user should provide the metadata of the authorization service, an instance of ***DidResolver*** and a callback that allows to obtain the default metadata from the clients. The latter allows the metadata to be bound to the use case, eliminating the need for clients to specify it in full. In practice, the metadata implicitly specified by the user will be combined with the default metadata, the former prevailing over the latter.
+To manage the OpenID process for issuers or any other entity interested in authorization/authentication, the OpenIDRelyingParty class is defined.
 
+When instantiating this class, the user must provide:
+  - Authorization server metadata that defines the OpenID configuration.
+  - A DidResolver instance to resolve DIDs to their corresponding DID Documents.
+  - A signing callback used to sign the tokens or data required during the protocol.
+  - A default holder metadata object, which serves as a base configuration for all Holder Wallets initiating requests. This metadata is dynamically overridden by the actual data provided by each Holder.
+  - A scope verification flag, which enables or disables verification of the scope parameter against the scopes_supported declared in the authorization server metadata.
+  - A state manager, responsible for managing and storing nonces.
+  - A subject comparison function, used to verify if two identifiers (typically DIDs) refer to the same subject.
+  - A general configuration object, defining expiration times for the tokens involved in the flow.
+  - Optionally, several custom verification callbacks can be provided:
+      - To validate the issuer state parameter.
+      - To check the authorization details of the request.
+      - To validate credentials during VP presentation based on custom business logic.
+      - To validate a pre-authorization code when using the pre-authorized flow.
+
+By allowing default metadata and flexible callback injection, this class supports multiple use cases while simplifying the implementation for relying parties.
+
+It is recomended to read the tests and the provided documentation for each method.
 
 ```ts
-const rp = new OpenIDReliyingParty(
-    async () => {
-      return {
-        "authorization_endpoint": "openid:",
-        "response_types_supported": ["vp_token", "id_token"],
-        "vp_formats_supported": {
-          "jwt_vp": {
-            "alg_values_supported": ["ES256"]
-          },
-          "jwt_vc": {
-            "alg_values_supported": ["ES256"]
-          }
-        },
-        "scopes_supported": ["openid"],
-        "subject_types_supported": ["public"],
-        "id_token_signing_alg_values_supported": ["ES256"],
-        "request_object_signing_alg_values_supported": ["ES256"],
-        "subject_syntax_types_supported": [
-          "urn:ietf:params:oauth:jwk-thumbprint",
-          "did:key:jwk_jcs-pub"
-        ],
-        "id_token_types_supported": ["subject_signed_id_token"]
-      }
-    },
+const rp = new OpenIdRPStepBuilder(
     {
       ...generateDefaultAuthorisationServerMetadata("https://issuer"),
-      grant_types_supported: ["authorization_code", "pre-authorised_code"]
-    },
-    new Resolver(getResolver())
-  );
+      grant_types_supported: [
+        "urn:ietf:params:oauth:grant-type:pre-authorized_code",
+        "authorization_code"
+      ]
+    }
+  )
+    .withPreAuthCallback(async (clientId, preCode, pin) => { // Used to validate pre-auth codes
+      if (preCode !== "123" || pin !== "444") {
+        return Result.Err(new Error("Invalid"));
+      }
+      return Result.Ok(holderDid);
+    })
+    .withVpCredentialExternalVerification(async (vc, dm, key) => {
+      return Result.Ok(null); // Used to validate the claims data in VPs
+    })
+    .setDefaultHolderMetadata({
+      "authorization_endpoint": "openid:",
+      "response_types_supported": ["vp_token", "id_token"],
+      "vp_formats_supported": {
+        "jwt_vp": {
+          "alg_values_supported": ["ES256"]
+        },
+        "jwt_vc": {
+          "alg_values_supported": ["ES256"]
+        }
+      },
+      "scopes_supported": ["openid"],
+      "subject_types_supported": ["public"],
+      "id_token_signing_alg_values_supported": ["ES256"],
+      "request_object_signing_alg_values_supported": ["ES256"],
+      "subject_syntax_types_supported": [
+        "urn:ietf:params:oauth:jwk-thumbprint",
+        "did:key:jwk_jcs-pub"
+      ],
+      "id_token_types_supported": ["subject_signed_id_token"]
+    })
+    .withDidResolver(new Resolver(getResolver()))
+    .withTokenSignCallback((payload, algs) => {
+      return signCallback(payload, algs);
+    })
+    .withStateManager(new MemoryStateManager())
+    .build();
 ```
 
 The Relying Party class currently allows the following:
 - Validate Base Authz Request (AuthzRequest with "code" as response_type)
 - Generate ID Token Request
 - Validate ID Token Response
+- Generate VP Token Request
+- Validate VP Token Response
 - Generate authorization code.
 - Validate Token Request
 - Generate Token Response
@@ -96,40 +135,23 @@ The Relying Party class currently allows the following:
 #### Verify Authz request with "code" as "response_type"
 ```ts
 let verifiedAuthzRequest = await rp.verifyBaseAuthzRequest(
-  authzRequest, // Request from client
-  {
-    // Optional verification callback
-    authzDetailsVerifyCallback: async (details) => {
-      if (details.types && !details.types.includes("TestVc")) {
-        return { valid: false, error: "Unssuported VC Type" };
-      }
-      return { valid: true };
-    }
-  }
+  authzRequest, // Authz Request from the client
 );
 ```
-It is also possible to supply two additional callbacks to check the scope value and the `issuer_state` value.
 
 #### Create ID Token Request
+In order to do so, first we need to verify an Authz Request as indicated in the previous example
 ```ts
-// Example with jose npm package
-const signCallback = async (payload: JwtPayload, _supportedAlgs?: JWA_ALGS[]) => {
-  const header = {
-    alg: "ES256",
-    kid: `${authServerDid}#${authServerKid}`
-  };
-  const keyLike = await importJWK(authServerJWK);
-  return await new SignJWT(payload)
-    .setProtectedHeader(header)
-    .setIssuedAt()
-    .sign(keyLike);
-};
 
+// Create ID Token Request
 const idTokenRequest = await rp.createIdTokenRequest(
   verifiedAuthzRequest.authzRequest.client_metadata?.authorization_endpoint!,
   verifiedAuthzRequest.authzRequest.client_id,
   authServerUrl + "/direct_post",
-  signCallback
+  {
+    type: "Issuance",
+    verifiedBaseAuthzRequest: verifiedAuthzRequest,
+  }
 );
 ```
 
@@ -150,11 +172,6 @@ export type CreateIdTokenRequestOptionalParams = {
    */
   state?: string;
   /**
-   * The nonce to indicate in the JWT.
-   * @defaultValue UUID randomly generated
-   */
-  nonce?: string;
-  /**
    * The expiration time of the JWT. Must be in seconds
    * @defaultValue 1 hour
    */
@@ -168,48 +185,31 @@ export type CreateIdTokenRequestOptionalParams = {
 
 #### Verify ID Token Response
 ```ts
-const _verifiedIdTokenResponse = await rp.verifyIdTokenResponse(
-  idTokenResponse,
-  async (_header, payload, didDocument) => {
-    if (!payload.nonce || payload.nonce !== idTokenRequest.requestParams.nonce!) {
-      return { valid: false, error: "Invalid nonce" };
-    }
-    if (didDocument.id !== holderDid) { // HolderDID being the expected DID
-      return { valid: false, error: "Unkown client id" }
-    }
-    return { valid: true }
-  }
+const verifiedIdTokenResponse = await rp.verifyIdTokenResponse(
+  idTokenResponse, // ID Token response sent by a user
 );
 ```
-The method does not define any optional parameters.
+The method also generates an authorization code, that can be exchange for an access token in the next step.
 
 #### Generate AccessToken / Token Response
 ```ts
+// Create Token Request
+const tokenRequest: TokenRequest = {
+  grant_type: "authorization_code",
+  client_id: holderDid,
+  code_verifier: codeVerifier,
+  code: verifiedIdTokenResponse.authzCode
+};
+// Create Token Response
 const _tokenResponse = await rp.generateAccessToken(
   tokenRequest,
-  false, // Indicate if the response should include an ID Token
-  signCallback,
+  false,
   authServerUrl,
-  {
-    authorizeCodeCallback: async (_clientId, code) => {
-      if (code === "1453") {
-        return { valid: true };
-      }
-      return { valid: false, error: "Invalid authz code" };
-    },
-    codeVerifierCallback: async (_clientId, codeVerifier) => {
-      if (!codeVerifier || !await verifyChallenge(codeVerifier, authzRequest.code_challenge!)) {
-        return { valid: false, error: "Invalid code_verifier" };
-      }
-      return { valid: true }
-    },
-  }
+  authServerJWK
 );
 ```
 
-The method enables several optional parameters that must be supplied depending on the `grant_type` supported:
-- `authorization_code`: Must supply a callback for the verification of the code itself and a second one for the verification of the PKCE Challenge that must have been delivered by the user in a previous authorization request.
-- `pre-authorize_code`: It must supply a callback for the verification of the code itself that additionally receives the PIN sent by the user.
+The method support both the authorization_code grant type and also, the pre-authorize one. However, only the first one is avaible by default. In order to be able to use pre-authorization codes, the user must specify it during the building phase of the RP using the setp builder, which will require a callback to be provided to redeem these codes.
 
 #### Create VP Token Request
 ```ts
@@ -263,16 +263,50 @@ export type CreateVpTokenRequestOptionalParams = {
 
 #### Verify VP Token Response
 ```ts
-async function ValidNonceCallback() {
-  // It is used to check the validity of the nonce contained inside the VP Token
-  return { valid: true };
-}
 const presentationDefinition = getPresentationDefinition();
 await rp.verifyVpTokenResponse(
   vpResponse,
   presentationDefinition,
-  ValidNonceCallback
 );
+```
+
+### VC Issuer
+#### CredentialDataManager
+The CredentialDataManager is a pluggable abstraction used internally by the W3CVcIssuer class to retrieve all data necessary to issue a Verifiable Credential (VC). It allows the issuer component to remain decoupled from the logic responsible for:
+- Extracting or generating the credentialSubject data.
+- Determining whether a VC should be issued immediately or deferred.
+- Managing deferred credential flows via acceptance tokens.
+- Optionally resolving the actual subject identifier (e.g. via a DID URL).
+
+The user needs to give an implementation of this class to the VC Issuer component in order to generate VCs.
+
+#### VC Issuer Class
+The W3CVcIssuer class is responsible for issuing W3C Verifiable Credentials using either immediate (in-time) or deferred flows, aligned with the OID4VCI specification.
+
+It integrates with the CredentialDataManager component to retrieve subject-specific credential data and exposes a simple interface to validate access tokens and issue credentials.
+
+```js
+const vcIssuer = new W3CVcIssuer(
+  metadata,                // IssuerMetadata
+  didResolver,             // Resolver instance for DIDs
+  issuerDid,               // DID string of the issuer
+  signCallback,            // Function that signs the VC
+  stateManager,            // StateManager used for nonce handling
+  credentialDataManager,   // Instance of CredentialDataManager
+  vcTypesContextMap?       // Optional: type-to-context mapping for dynamic context injection
+)
+```
+
+To issue a VC using the InTime flow:
+
+```js
+const accessToken = await issuer.verifyAccessToken(token, publicKey);
+const response = await issuer.generateCredentialResponse(accessToken, credentialRequest, W3CDataModel.V1);
+```
+
+To exchange a deferred code for a VC:
+```js
+const response = await issuer.exchangeAcceptanceTokenForVc(deferredToken, W3CDataModel.V2);
 ```
 
 ## Code of contribution

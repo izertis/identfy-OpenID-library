@@ -1,4 +1,5 @@
-import { DidDocumentError } from "../classes/index.js";
+import { DidDocumentError } from '../classes/index.js';
+// TODO: In a DID Document the VerificationMethod can be expressed
 // in differents formats other than JWK.
 // https://www.w3.org/TR/did-core/#verification-material
 /**
@@ -11,9 +12,8 @@ import { DidDocumentError } from "../classes/index.js";
  * with that ID. It can also throws if the method does not provide any JWK
  */
 export function getAuthentificationJWKKeys(didDocument, methodIdentifier) {
-    var _a;
-    if (!((_a = didDocument.authentication) === null || _a === void 0 ? void 0 : _a.includes(methodIdentifier))) {
-        throw new DidDocumentError("The kid specified is not the identifier of an authentification relationship");
+    if (!didDocument.authentication?.includes(methodIdentifier)) {
+        throw new DidDocumentError('The kid specified is not the identifier of an authentification relationship');
     }
     return getJwkFromDocument(didDocument, methodIdentifier);
 }
@@ -27,9 +27,8 @@ export function getAuthentificationJWKKeys(didDocument, methodIdentifier) {
  * with that ID. It can also throws if the method does not provide any JWK
  */
 export function getAssertionMethodJWKKeys(didDocument, methodIdentifier) {
-    var _a;
-    if (!((_a = didDocument.assertionMethod) === null || _a === void 0 ? void 0 : _a.includes(methodIdentifier))) {
-        throw new DidDocumentError("The kid specified is not the identifier of an assertionMethod relationship");
+    if (!didDocument.assertionMethod?.includes(methodIdentifier)) {
+        throw new DidDocumentError('The kid specified is not the identifier of an assertionMethod relationship');
     }
     return getJwkFromDocument(didDocument, methodIdentifier);
 }
@@ -37,12 +36,13 @@ function getJwkFromDocument(didDocument, methodIdentifier) {
     if (!didDocument.verificationMethod) {
         throw new DidDocumentError(`No verification methods defined in DidDocumet for did ${didDocument.id}`);
     }
-    const verificationMethod = didDocument.verificationMethod.find((method) => method.id === methodIdentifier);
+    const verificationMethod = didDocument.verificationMethod.find(method => method.id === methodIdentifier);
     if (!verificationMethod) {
         throw new DidDocumentError(`There is no verification method with id ${methodIdentifier}`);
     }
     if (!verificationMethod.publicKeyJwk) {
-        throw new DidDocumentError("The verificationMethod must contain public key with JWK format");
+        throw new DidDocumentError('The verificationMethod must contain public key with JWK format');
     }
     return verificationMethod.publicKeyJwk;
 }
+//# sourceMappingURL=did_document.js.map

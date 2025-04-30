@@ -1,16 +1,19 @@
-import { JWA_ALGS } from "../constants";
-import { W3CVerifiableCredentialFormats, W3CVerifiablePresentationFormats } from "../formats";
+import {JWA_ALGS} from '@/constants';
+import {
+  W3CVerifiableCredentialFormats,
+  W3CVerifiablePresentationFormats,
+} from '@/formats';
 
 /**
  * Data structure of a presentation definition according to
  * https://identity.foundation/presentation-exchange/spec/v2.0.0/#presentation-definition
  */
 export interface DIFPresentationDefinition {
-  id: string,
-  input_descriptors: PresentationInputDescriptor[]
-  name?: string,
-  purpose?: string,
-  format: LdFormat & JwtFormat
+  id: string;
+  input_descriptors: PresentationInputDescriptor[];
+  name?: string;
+  purpose?: string;
+  format: LdFormat & JwtFormat;
 }
 
 /**
@@ -18,11 +21,11 @@ export interface DIFPresentationDefinition {
  * Based on https://identity.foundation/presentation-exchange/spec/v2.0.0/#input-descriptor
  */
 export interface PresentationInputDescriptor {
-  id: string,
-  name?: string,
-  purpose?: string,
-  format?: LdFormat & JwtFormat,
-  constraints: InputDescriptorContraintType
+  id: string;
+  name?: string;
+  purpose?: string;
+  format?: LdFormat & JwtFormat;
+  constraints: InputDescriptorContraintType;
 }
 
 /**
@@ -52,9 +55,9 @@ export interface InputDescriptorContraintType {
 export type LdFormat = {
   [key in keyof Pick<
     W3CVerifiableCredentialFormats & W3CVerifiablePresentationFormats,
-    "jwt_vc_json-ld" | "ldp_vc" | "ldp_vp">
-  ]?: { proof_type: string }
-}
+    'jwt_vc_json-ld' | 'ldp_vc' | 'ldp_vp'
+  >]?: {proof_type: string}; // TODO: When LD is adopted, add values from LD Registry https://w3c-ccg.github.io/ld-cryptosuite-registry/#ed25519
+};
 
 /**
  * Specifies the valid formats that use JWT
@@ -63,6 +66,6 @@ export type LdFormat = {
 export type JwtFormat = {
   [key in keyof Pick<
     W3CVerifiableCredentialFormats & W3CVerifiablePresentationFormats,
-    "jwt_vc_json" | "jwt_vc" | "jwt_vp_json" | "jwt_vp">
-  ]?: { alg: Exclude<JWA_ALGS, "none">[] }
-}
+    'jwt_vc_json' | 'jwt_vc' | 'jwt_vp_json' | 'jwt_vp'
+  >]?: {alg: Exclude<JWA_ALGS, 'none'>[]};
+};

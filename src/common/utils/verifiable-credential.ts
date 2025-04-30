@@ -1,5 +1,5 @@
-import jsonpath from "jsonpath";
-import { W3CVerifiableCredential } from "../interfaces";
+import jsonpath from 'jsonpath';
+import {W3CVerifiableCredential} from '@/interfaces';
 
 /**
  * Allows to obtain data from a VC given a JSON PATH
@@ -9,7 +9,7 @@ import { W3CVerifiableCredential } from "../interfaces";
  */
 export function extractFromCredential(
   vc: W3CVerifiableCredential,
-  path: string
+  path: string,
 ) {
   const pathResult = jsonpath.query(vc, path, 1);
   if (pathResult.length) {

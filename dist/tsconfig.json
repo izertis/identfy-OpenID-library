@@ -1,0 +1,59 @@
+{
+    "extends": "@tsconfig/node22/tsconfig.json",
+    "compilerOptions": {
+        "rootDir": ".",
+        "baseUrl": "./",
+        "outDir": "./dist",
+        "sourceMap": true,
+        "inlineSources": true,
+        "allowUnreachableCode": false,
+        "allowUnusedLabels": false,
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitReturns": true,
+        "pretty": true,
+        "forceConsistentCasingInFileNames": true,
+        "declaration": true,
+        "downlevelIteration": true,
+        "preserveConstEnums": true,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "allowSyntheticDefaultImports": true,
+        "resolveJsonModule": true,
+        "importHelpers": true,
+        "paths": {
+            "@/common": [
+                "./src/common/*"
+            ],
+            "@/constants": [
+                "./src/common/constants/index.ts"
+            ],
+            "@/classes": [
+                "./src/common/classes/index.ts"
+            ],
+            "@/formats": [
+                "./src/common/formats/index.ts"
+            ],
+            "@/interfaces": [
+                "./src/common/interfaces/index.ts"
+            ],
+            "@/types": [
+                "./src/common/types/index.ts"
+            ],
+            "@/core/*": [
+                "./src/core/*"
+            ],
+            "@/*": [
+                "./src/*"
+            ]
+        }
+    },
+    "include": [
+        "test/**/*.ts",
+        "src/**/*.ts",
+        "jest.*.ts"
+    ],
+    "exclude": [
+        "node_modules/**",
+        "dist/**"
+    ]
+}

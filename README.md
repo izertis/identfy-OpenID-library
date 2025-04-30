@@ -1,6 +1,8 @@
 <p align="center">
     <picture>
-      <img alt="identfy" src="./docs/img/header-identfy.jpg" style="max-width: 100%;">
+      <source media="(prefers-color-scheme: dark)" srcset="./docs/img/identfy-logo-dark.svg">
+      <source media="(prefers-color-scheme: light)" srcset="./docs/img/identfy-logo-light.svg">
+      <img alt="identfy" src="./docs/img/identfy.png" width="350" style="max-width: 100%;">
     </picture>
 </p>
 
@@ -12,12 +14,12 @@
 
 <br/>
 
-**[identfy](https://github.com/izertis/red.es-identfy)** is a combination of various products that enable building user-centric solutions.
+**[identfy](https://github.com/izertis/identfy)** is a combination of various products that enable building user-centric solutions.
 
 
 # identfy OpenID library
 
-**identfy OpenID library** is a generalist and stateless implementation of OpenID4VCI and OpenID4VP. The library defines the methods and tools needed to manage an authorization and authentication process, as well as to issue W3C credentials. For its correct operation, the user must provide callbacks for different issues, especially related to the signature and additional validation processes to be performed.
+**identfy OpenID library** is a generalist implementation of OpenID4VCI and OpenID4VP. The library defines the methods and tools needed to manage an authorization and authentication process, as well as to issue W3C credentials. For its correct operation, the user must provide callbacks for different issues, especially related to the signature and additional validation processes to be performed.
 
 The issuing of credentials is done through a different component than the one used for authentication and authorization, so in practice a user interested only in these issues could also benefit from the library.
 
@@ -34,13 +36,11 @@ The issuing of credentials is done through a different component than the one us
 
 ### Prerequisites
 
-For the use of the library only Node with a version equal or higher than 16 is required.
+For the use of the library only Node with a version equal or higher than 22 is required.
 
 ### Step by step
 
-You can import it on your own project.
-
-Soon, it will be availabme as an npm package.
+The library is not yet available in npm, so for the time being you need to import it in your project.
 
 
 ## Development guide

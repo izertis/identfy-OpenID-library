@@ -1,16 +1,19 @@
-import { OPENID_CREDENTIAL_AUTHZ_DETAILS_TYPE } from "../../constants/index.js";
+import { OPENID_CREDENTIAL_AUTHZ_DETAILS_TYPE } from '../../constants/index.js';
 /**
  * Builder class for AuthorizationDetails
  */
 export class AuthzDetailsBuilder {
+    type;
+    format;
+    types = [];
+    locations = [];
+    actions = [];
+    datatypes = [];
+    identifier;
+    privileges = [];
     constructor(type, format) {
         this.type = type;
         this.format = format;
-        this.types = [];
-        this.locations = [];
-        this.actions = [];
-        this.datatypes = [];
-        this.privileges = [];
     }
     /**
      * Generate a builder with the required parameters to build
@@ -88,7 +91,8 @@ export class AuthzDetailsBuilder {
             actions: this.actions,
             datatypes: this.datatypes,
             identifier: this.identifier,
-            privileges: this.privileges
+            privileges: this.privileges,
         };
     }
 }
+//# sourceMappingURL=authz_details.builder.js.map

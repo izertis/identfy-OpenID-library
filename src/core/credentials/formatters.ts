@@ -1,28 +1,25 @@
-import { InternalError } from "../../common/classes/index.js";
+import {InternalNonceError} from '../../common/classes/index.js';
 import {
   W3CDataModel,
-  W3CVerifiableCredentialFormats
-} from "../../common/formats/index.js";
-import {
-  W3CVerifiableCredential,
-} from "../../common/interfaces/w3c_verifiable_credential.interface.js";
-import { JwtPayload } from "jsonwebtoken";
-import { expressDateInSeconds } from "../../common/utils/time.js";
+  W3CVerifiableCredentialFormats,
+} from '../../common/formats/index.js';
+import {W3CVerifiableCredential} from '../../common/interfaces/w3c_verifiable_credential.interface.js';
+import {JwtPayload} from 'jsonwebtoken';
+import {expressDateInSeconds} from '../../common/utils/time.js';
 
 /**
  * Abstract class allowing to express unsigned W3C credentials in different formats.
  */
 export abstract class VcFormatter {
-  constructor(protected dataModel: W3CDataModel) { }
+  constructor(protected dataModel: W3CDataModel) {}
   /**
    * Express the specified VC in the format associated with the object
    * @param vc The VC to format.
    * @returns THe VC formated in W3C format or as a JWT payload
    */
   abstract formatVc(
-    vc: W3CVerifiableCredential
+    vc: W3CVerifiableCredential,
   ): W3CVerifiableCredential | JwtPayload;
-
 
   /**
    * Generates a formatter instance based on the specified format
@@ -32,14 +29,15 @@ export abstract class VcFormatter {
    */
   static fromVcFormat(
     format: W3CVerifiableCredentialFormats,
-    dataModel: W3CDataModel
+    dataModel: W3CDataModel,
   ): VcFormatter {
-    if (format === "jwt_vc" || format === "jwt_vc_json") {
+    if (format === 'jwt_vc' || format === 'jwt_vc_json') {
       return new JwtVcFormatter(dataModel);
-    } else if (format === "jwt_vc_json-ld" || format === "ldp_vc") {
-      throw new InternalError("Unimplemented");
+    } else if (format === 'jwt_vc_json-ld' || format === 'ldp_vc') {
+      // TODO:
+      throw new InternalNonceError('Unimplemented');
     } else {
-      throw new InternalError("Unsupported format");
+      throw new InternalNonceError('Unsupported format');
     }
   }
 
@@ -57,24 +55,24 @@ class JwtVcFormatter extends VcFormatter {
     const token: JwtPayload = {
       sub: vc.credentialSubject.id,
       iss: vc.issuer,
-      vc
+      vc,
     };
     if (vc.id) {
       token.jti = vc.id;
     }
     if (this.dataModel === W3CDataModel.V1) {
-      return this.formatDataModel1(token, vc)
+      return this.formatDataModel1(token, vc);
     } else {
-      return this.formatDataModel2(token, vc)
+      return this.formatDataModel2(token, vc);
     }
   }
 
   private formatDataModel1(
     token: JwtPayload,
-    vc: W3CVerifiableCredential
+    vc: W3CVerifiableCredential,
   ): W3CVerifiableCredential | JwtPayload {
-    const nbf = vc.validFrom ?? (vc.issuanceDate ?? vc.issued);
-    const iat = vc.issuanceDate ?? (vc.issued ?? vc.validFrom);
+    const nbf = vc.validFrom ?? vc.issuanceDate ?? vc.issued;
+    const iat = vc.issuanceDate ?? vc.issued ?? vc.validFrom;
     if (nbf) {
       token.nbf = expressDateInSeconds(nbf);
     }
@@ -89,7 +87,7 @@ class JwtVcFormatter extends VcFormatter {
 
   private formatDataModel2(
     token: JwtPayload,
-    vc: W3CVerifiableCredential
+    vc: W3CVerifiableCredential,
   ): W3CVerifiableCredential | JwtPayload {
     if (vc.validFrom) {
       token.iat = expressDateInSeconds(vc.validFrom);
@@ -100,5 +98,4 @@ class JwtVcFormatter extends VcFormatter {
     }
     return token;
   }
-
 }

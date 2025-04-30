@@ -1,7 +1,7 @@
-import { KeyLike } from "jose";
-import { W3CDataModel } from "../../common/formats/index.js";
-import { W3CVerifiableCredential } from "../../common/interfaces/index.js";
-import { VerificationResult } from "../../common/types/index.js";
+import { KeyLike } from 'jose';
+import { W3CDataModel } from '../../common/formats/index.js';
+import { W3CVerifiableCredential } from '../../common/interfaces/index.js';
+import { Result } from '../../common/classes/result.js';
 /**
  * Callback type that is used to perfom additional verifications of a VC.
  * It can be used to check the credentialStatus parameter and the terms of use.
@@ -12,7 +12,7 @@ import { VerificationResult } from "../../common/types/index.js";
  * @returns Indication of whether the verification was successful
  * accompanied by an optional error message
  */
-export type CredentialAdditionalVerification = (vc: W3CVerifiableCredential, dmVersion: W3CDataModel, issuerPublickKey?: KeyLike | Uint8Array) => Promise<VerificationResult>;
+export type CredentialAdditionalVerification = (vc: W3CVerifiableCredential, dmVersion: W3CDataModel, issuerPublickKey?: KeyLike | Uint8Array) => Promise<Result<null, Error>>;
 /**
  * Callback type that is used to verify the nonce value of a VP Token
  * @param subject The holder of the VP Token
@@ -20,7 +20,7 @@ export type CredentialAdditionalVerification = (vc: W3CVerifiableCredential, dmV
  * @returns Indication of whether the verification was successful
  * accompanied by an optional error message
  */
-export type NonceVerification = (subject: string, nonce: string) => Promise<VerificationResult>;
+export type NonceAndStateVerification = (subject: string, nonce: string, state?: string) => Promise<Result<null, Error>>;
 /**
  * Data extracted from verifiable credentials contained in a VP as
  * indicated in a submission definition. For each dataset, the key

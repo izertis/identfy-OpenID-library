@@ -1,9 +1,6 @@
-import { AuthzResponseType } from "../types/index.js";
-import { AuthorizationDetails } from "./authz_details.interface.js";
-import {
-  HolderMetadata,
-  ServiceMetadata
-} from "./client_metadata.interface.js";
+import {AuthzResponseType} from '../types/index.js';
+import {AuthorizationDetails} from './authz_details.interface.js';
+import {HolderMetadata, ServiceMetadata} from './client_metadata.interface.js';
 
 /**
  * Defines an Authorization Request in accordance to
@@ -21,7 +18,7 @@ export interface AuthzRequest {
   nonce?: string;
   code_challenge?: string;
   code_challenge_method?: string;
-  client_metadata?: HolderMetadata | ServiceMetadata
+  client_metadata?: HolderMetadata | ServiceMetadata;
 }
 
 /**
@@ -29,12 +26,12 @@ export interface AuthzRequest {
  * This is the case when the request must be signed.
  */
 export interface AuthzRequestWithJWT extends AuthzRequest {
-  request?: string
-};
+  request?: string;
+}
 
 /**
  * Defines in which location the request for authorisation should be included:
- * - PLAIN_REQUEST: The request is not signed and travels in the same HTTP 
+ * - PLAIN_REQUEST: The request is not signed and travels in the same HTTP
  * request as in the form of parameters.
  * - JWT_OBJECT: The request is signed and represented as a JWT
  */

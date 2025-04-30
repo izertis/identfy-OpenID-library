@@ -1,6 +1,6 @@
-import { JwtPayload } from "jsonwebtoken";
-import { W3CVerifiablePresentation } from "./verifiable_presentation.interface";
-import { DIFPresentationSubmission } from "./presentation_submission.interface";
+import { JwtPayload } from 'jsonwebtoken';
+import { W3CVerifiablePresentation } from './verifiable_presentation.interface.js';
+import { DIFPresentationSubmission } from './presentation_submission.interface.js';
 /**
  * Defines an authorization response for the response type "vp_token"
  */

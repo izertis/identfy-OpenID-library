@@ -1,4 +1,4 @@
-import { VerificationResult } from "../types";
+import { VerificationResult } from '../types/index.js';
 /**
  * Utility function that can be used in almost all verification callbacks
  * of the differents components of this library

@@ -1,6 +1,6 @@
-import { W3CDataModel, W3CVerifiableCredentialFormats } from "../../common/formats/index.js";
-import { W3CVerifiableCredential } from "../../common/interfaces/w3c_verifiable_credential.interface.js";
-import { JwtPayload } from "jsonwebtoken";
+import { W3CDataModel, W3CVerifiableCredentialFormats } from '../../common/formats/index.js';
+import { W3CVerifiableCredential } from '../../common/interfaces/w3c_verifiable_credential.interface.js';
+import { JwtPayload } from 'jsonwebtoken';
 /**
  * Abstract class allowing to express unsigned W3C credentials in different formats.
  */

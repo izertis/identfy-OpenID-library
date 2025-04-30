@@ -1,4 +1,4 @@
-import { JwtPayload } from "jsonwebtoken";
+import { JwtPayload } from 'jsonwebtoken';
 /**
  * Type definition that defines the possible models for a W3C VC
  */

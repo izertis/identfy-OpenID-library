@@ -1,4 +1,4 @@
-import { VerificationResult } from "../types";
+import {VerificationResult} from '@/types';
 
 /**
  * Utility function that can be used in almost all verification callbacks
@@ -9,5 +9,5 @@ import { VerificationResult } from "../types";
 export async function alwaysAcceptVerification(
   ..._data: any[]
 ): Promise<VerificationResult> {
-  return { valid: true }
+  return {valid: true};
 }
